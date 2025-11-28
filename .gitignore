@@ -1,0 +1,22 @@
+# Data files
+data/
+*.csv
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Environments
+.env
+.venv
+env/
+venv/
+
+# IDE files
+.idea/
+.vscode/
