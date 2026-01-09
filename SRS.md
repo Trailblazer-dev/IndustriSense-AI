@@ -58,6 +58,25 @@ The primary users of the system are:
 -   For a real-world deployment (beyond the prototype), it is assumed that reliable internet connectivity (e.g., 4G/5G) would be available at factory locations for data transmission.
 -   It is assumed that existing maintenance logs and PLC data would be accessible for initial model training in a real-world scenario.
 
+### 2.6 Critical Data Limitations (AUDIT ADDITION)
+
+The IndustriSense-AI prototype is **fundamentally constrained by the nature of the dataset**: the AI4I 2020 dataset is a **static cross-sectional snapshot** with no temporal dimension.
+
+**Dataset Characteristics:**
+- **10,000 rows**, each representing a single observation/measurement snapshot
+- **No timestamps, sequence IDs, or machine identifiers** that would enable time-series reconstruction
+- **Cross-sectional data only**: Each row is independent; no longitudinal degradation profiles per machine
+
+**Implications for System Capabilities:**
+1. **Time-Series Models (e.g., CLSTM) are not applicable.** Temporal RUL prognosis requires sequential data showing component degradation over time for the same machine.
+2. **Real-time monitoring is not possible.** The system can only provide snapshot-based predictions, not continuous state tracking or drift detection.
+3. **Thermal Trend calculation is impossible.** Computing the slope of temperature over time requires time-indexed observations for each machine.
+4. **RUL estimation must be analytical (cross-sectional)** rather than predictive (time-series based). Tool Wear (0-254 min) is used as a proxy for component degradation within a static context.
+
+**Prototype Scope Consequence:**
+- The system is suitable for **batch analysis of snapshot sensor data** (e.g., "Given today's sensor readings, what is the failure risk?")
+- The system is **not suitable for continuous predictive monitoring** or temporal trend detection without architectural and data collection changes.
+
 ---
 
 ## 3. Specific Requirements
@@ -65,20 +84,50 @@ The primary users of the system are:
 ### 3.1 Functional Requirements
 
 #### 3.1.1 Data Processing and Feature Engineering
--   **FR-1:** The system shall map features from the source dataset to represent key physical processes (e.g., map "Torque" and "Rotational Speed" to CTC roller speed differential).
--   **FR-2:** The system shall implement an Isolation Forest algorithm to detect sensor soft faults (e.g., drift, spikes).
--   **FR-3:** The system shall calculate a custom "Stress Index" feature, defined as `Torque * Tool Wear`, to predict overstrain failures.
--   **FR-4:** The system shall calculate a "Thermal Trend" feature by computing the slope of bearing temperature over time to detect overheating or lubrication issues.
+
+-   **FR-1 [FEASIBLE]:** The system shall map features from the source dataset to represent key physical processes (e.g., map "Torque" and "Rotational Speed" to CTC roller speed differential).
+    - **Evidence:** Dataset contains exactly the features specified: Air temperature [K], Process temperature [K], Rotational speed [rpm], Torque [Nm], Tool wear [min]. EDA confirms sensor data distributions are reasonable.
+
+-   **FR-2 [PARTIALLY FEASIBLE]:** The system shall implement an Isolation Forest algorithm to detect sensor soft faults (e.g., drift, spikes).
+    - **Evidence:** Dataset has no missing values or duplicates. However, being a static snapshot with single observations per product, anomaly detection is limited to cross-sectional outliers, not temporal drift detection.
+    - **Proposed Way Forward:** Reframe FR-2 as "Cross-sectional anomaly detection" rather than temporal drift detection. Isolation Forest can detect unusual sensor combinations or extreme values within the snapshot, but cannot detect gradual drift or spikes across time.
+
+-   **FR-3 [FEASIBLE]:** The system shall calculate a custom "Stress Index" feature, defined as `Torque * Tool Wear`, to predict overstrain failures.
+    - **Evidence:** EDA demonstrates that Stress Index successfully differentiates Overstrain Failure (OSF) cases: Mean Stress Index for OSF=1 is 12,067 vs. OSF=0 is 4,238. Feature engineering is applicable.
+
+-   **FR-4 [NOT FEASIBLE]:** The system shall calculate a "Thermal Trend" feature by computing the slope of bearing temperature over time to detect overheating or lubrication issues.
+    - **Evidence:** Dataset is a static cross-sectional snapshot with no timestamps or machine identifiers enabling time-series construction. EDA explicitly notes: "With this snapshot dataset, we cannot directly calculate a time-based slope for each machine."
+    - **Proposed Way Forward:**
+      - **Option A (Recommended):** Replace "Thermal Trend" with a "Temperature Differential" feature: `Process temperature [K] - Air temperature [K]`. EDA shows Mean Temp Diff for HDF=1 is 10.16 K vs. HDF=0 is 9.97 K, indicating some discriminative power.
+      - **Option B:** Acknowledge FR-4 as out-of-scope for prototype, document as future requirement requiring real-time time-series data collection.
 
 #### 3.1.2 Machine Learning Models
--   **FR-5 (Failure Classification):** The system shall use an XGBoost model to classify machine failure modes. This model will be optimized for the F-beta score (with beta > 1) to prioritize Recall, minimizing the risk of missed failures.
--   **FR-6 (RUL Prognosis):** The system shall use a Convolutional LSTM (CLSTM) network to forecast the Remaining Useful Life (RUL) of critical components (e.g., rollers).
+
+-   **FR-5 [FEASIBLE]:** The system shall use an XGBoost model to classify machine failure modes. This model will be optimized for the F-beta score (with beta > 1) to prioritize Recall, minimizing the risk of missed failures.
+    - **Evidence:** Dataset contains all failure mode flags (TWF, HDF, PWF, OSF, RNF) and diverse sensor features. EDA shows failure modes are distinguishable: OSF has Mean Stress Index of 12,067 vs. 4,238 for no failure. XGBoost is applicable to this cross-sectional classification task.
+
+-   **FR-6 [NOT FEASIBLE AS SPECIFIED]:** The system shall use a Convolutional LSTM (CLSTM) network to forecast the Remaining Useful Life (RUL) of critical components (e.g., rollers).
+    - **Evidence:** CLSTM requires sequential/temporal data (e.g., sensor readings ordered by time for each machine). The dataset is a static snapshot with one row per (machine, observation) pair, containing no time-series or sequence information. EDA summary states: "Tool wear is a strong candidate for RUL prognosis, as it directly measures component degradation over time," but the dataset does not contain sequential degradation profiles.
+    - **Proposed Way Forward:**
+      - **Option A (Recommended - Analytical RUL):** Replace CLSTM with statistical regression models (e.g., XGBoost regression or linear regression) to predict Tool Wear as a proxy for RUL. Tool Wear ranges 0-254 minutes in the dataset, providing a quantifiable proxy. Reframe as "RUL Estimation" (analytical) rather than "RUL Prognosis" (predictive time-series).
+      - **Option B (Future Enhancement):** Document CLSTM as a future requirement contingent on collecting longitudinal time-series data (e.g., sensor readings logged at regular intervals for each machine unit over its operational lifetime).
 
 #### 3.1.3 Decision-Support Dashboard
--   **FR-7 (Asset Health):** The dashboard shall display a "Gauge-style" visual indicating the real-time health percentage of each monitored asset line.
--   **FR-8 (Predictive Alerts):** The system shall generate automated alerts (simulated as on-screen notifications) when a machine enters a high-risk failure state.
--   **FR-9 (XAI Justification):** The dashboard shall include a component that provides SHAP-based explanations for why an alert was triggered (e.g., "High vibration detected, likely due to bearing fatigue").
--   **FR-10 (Financial Impact):** The dashboard shall feature a "Financial Impact Tracker" that shows estimated savings from avoided downtime. This will be calculated by `avoided_downtime_hours * revenue_per_unit_of_tea`.
+
+-   **FR-7 [PARTIALLY FEASIBLE]:** The dashboard shall display a "Gauge-style" visual indicating the real-time health percentage of each monitored asset line.
+    - **Evidence:** Dataset contains sufficient features to compute a health score (e.g., combining failure probability from XGBoost model with sensor anomaly scores). However, "real-time" is not achievable with static snapshot data.
+    - **Proposed Way Forward:** Reframe as "Current Health Status Indicator" rather than "Real-time." Display health scores computed from the snapshot data and XGBoost predictions. Implement real-time monitoring as a future enhancement.
+
+-   **FR-8 [PARTIALLY FEASIBLE]:** The system shall generate automated alerts (simulated as on-screen notifications) when a machine enters a high-risk failure state.
+    - **Evidence:** XGBoost model can predict failure probability. Alerts can be generated for high-probability cases. However, the dataset provides snapshot probabilities, not state transitions over time.
+    - **Proposed Way Forward:** Generate alerts based on current failure probability thresholds (e.g., "Failure probability > 70%"). Document that temporal state change detection (e.g., "risk increased from 20% to 80%") requires longitudinal data.
+
+-   **FR-9 [FEASIBLE]:** The dashboard shall include a component that provides SHAP-based explanations for why an alert was triggered (e.g., "High vibration detected, likely due to bearing fatigue").
+    - **Evidence:** SHAP explanations are applicable to XGBoost models on cross-sectional data. Can generate feature importance scores and local explanations for individual predictions.
+
+-   **FR-10 [NOT FEASIBLE]:** The dashboard shall feature a "Financial Impact Tracker" that shows estimated savings from avoided downtime. This will be calculated by `avoided_downtime_hours * revenue_per_unit_of_tea`.
+    - **Evidence:** Dataset contains no downtime data, revenue information, or maintenance cost data. SRS assumptions state "existing maintenance logs... would be accessible for initial model training in a real-world scenario," but these are not present in the prototype dataset.
+    - **Proposed Way Forward:** Defer FR-10 as "Future Enhancement - Requires Business Data Integration." For prototype, provide a placeholder component showing the calculation template and expected inputs (downtime hours, revenue per unit) without actual values.
 
 ### 3.2 Non-Functional Requirements
 
