@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block title %}Models - IndustriSense AI{% endblock %}
+
+{% block content %}
+<div class="models">
+    <h1 class="page-title">Model Performance & Details</h1>
+
+    <div class="models-grid">
+        <!-- Classifier Model -->
+        <div class="model-card">
+            <div class="model-header">
+                <h2>{{ model_info.classifier.name }}</h2>
+                <span class="model-type">{{ model_info.classifier.type }}</span>
+            </div>
+            <div class="model-specs">
+                <div class="spec">
+                    <span class="spec-label">Features Used:</span>
+                    <span class="spec-value">{{ model_info.classifier.features }}</span>
+                </div>
+                <div class="spec">
+                    <span class="spec-label">Classes:</span>
+                    <span class="spec-value">{{ model_info.classifier.classes }}</span>
+                </div>
+                <div class="spec">
+                    <span class="spec-label">Task:</span>
+                    <span class="spec-value">Binary Classification (Failure/Normal)</span>
+                </div>
+            </div>
+            <div class="model-description">
+                <p>Predicts whether a machine will fail based on operational parameters and engineered features.</p>
+                <h4>Key Predictions:</h4>
+                <ul>
+                    <li>Equipment failure probability (0-100%)</li>
+                    <li>Risk classification (Critical/Warning/Normal)</li>
+                    <li>Confidence score for maintenance decision-making</li>
+                </ul>
+            </div>
+            {% if model_info.classifier.metrics %}
+            <div class="model-metrics">
+                <h4>Performance Metrics</h4>
+                <table class="metrics-table">
+                    <tr>
+                        <th>Metric</th>
+                        <th>Value</th>
+                    </tr>
+                    {% for metric in model_info.classifier.metrics[:5] %}
+                    <tr>
+                        <td>{{ metric.keys()|list|first }}</td>
+                        <td>{{ metric.values()|list|first }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Regressor Model -->
+        <div class="model-card">
+            <div class="model-header">
+                <h2>{{ model_info.regressor.name }}</h2>
+                <span class="model-type">{{ model_info.regressor.type }}</span>
+            </div>
+            <div class="model-specs">
+                <div class="spec">
+                    <span class="spec-label">Features Used:</span>
+                    <span class="spec-value">{{ model_info.regressor.features }}</span>
+                </div>
+                <div class="spec">
+                    <span class="spec-label">Target Variable:</span>
+                    <span class="spec-value">Tool Wear (minutes)</span>
+                </div>
+                <div class="spec">
+                    <span class="spec-label">Task:</span>
+                    <span class="spec-value">Continuous Regression</span>
+                </div>
+            </div>
+            <div class="model-description">
+                <p>Estimates remaining useful life (RUL) by predicting cumulative tool wear.</p>
+                <h4>Key Predictions:</h4>
+                <ul>
+                    <li>Tool wear accumulation in minutes</li>
+                    <li>Remaining useful life (253 min - predicted wear)</li>
+                    <li>Maintenance scheduling recommendations</li>
+                </ul>
+            </div>
+            {% if model_info.regressor.metrics %}
+            <div class="model-metrics">
+                <h4>Performance Metrics</h4>
+                <table class="metrics-table">
+                    <tr>
+                        <th>Metric</th>
+                        <th>Value</th>
+                    </tr>
+                    {% for metric in model_info.regressor.metrics[:5] %}
+                    <tr>
+                        <td>{{ metric.keys()|list|first }}</td>
+                        <td>{{ metric.values()|list|first }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Architecture Overview -->
+    <div class="architecture-section">
+        <h2>System Architecture</h2>
+        <div class="architecture-diagram">
+            <div class="arch-box input">
+                <h4>Raw Data Input</h4>
+                <p>Machine operational parameters (temperature, speed, torque, etc.)</p>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box process">
+                <h4>Feature Engineering</h4>
+                <p>10 engineered features including interactions and composites</p>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box model">
+                <h4>Dual Models</h4>
+                <p>Classifier (2-way) & Regressor (continuous)</p>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box output">
+                <h4>Predictions</h4>
+                <p>Failure risk & RUL estimates</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Comparison -->
+    <div class="comparison-section">
+        <h2>Model Comparison</h2>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Aspect</th>
+                    <th>Classifier (Failure)</th>
+                    <th>Regressor (RUL)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Algorithm</strong></td>
+                    <td>XGBoost Classification</td>
+                    <td>XGBoost Regression</td>
+                </tr>
+                <tr>
+                    <td><strong>Input Features</strong></td>
+                    <td>10 features</td>
+                    <td>9 features</td>
+                </tr>
+                <tr>
+                    <td><strong>Output Type</strong></td>
+                    <td>Probability (0-1)</td>
+                    <td>Continuous Value (minutes)</td>
+                </tr>
+                <tr>
+                    <td><strong>Use Case</strong></td>
+                    <td>Alarm generation</td>
+                    <td>Maintenance scheduling</td>
+                </tr>
+                <tr>
+                    <td><strong>Key Strength</strong></td>
+                    <td>Quick binary decision-making</td>
+                    <td>Precise RUL estimation</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.models-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 30px;
+    margin: 30px 0;
+}
+
+.model-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.model-header {
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.model-header h2 {
+    margin: 0 0 10px 0;
+    color: #333;
+}
+
+.model-type {
+    display: inline-block;
+    background-color: #667eea;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.model-specs {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+.spec {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.spec:last-child {
+    border-bottom: none;
+}
+
+.spec-label {
+    font-weight: bold;
+    color: #666;
+}
+
+.spec-value {
+    color: #333;
+}
+
+.model-description h4,
+.model-metrics h4 {
+    margin-top: 15px;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.model-description ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.model-description li {
+    margin: 5px 0;
+    color: #666;
+}
+
+.metrics-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.metrics-table th,
+.metrics-table td {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+}
+
+.metrics-table th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+
+.architecture-section {
+    margin-top: 50px;
+    padding: 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px;
+}
+
+.architecture-section h2 {
+    margin-top: 0;
+}
+
+.architecture-diagram {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.arch-box {
+    flex: 1;
+    min-width: 150px;
+    padding: 15px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.arch-box.input {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.arch-box.process {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.arch-box.model {
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+.arch-box.output {
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.arch-box h4 {
+    margin: 0 0 8px 0;
+}
+
+.arch-box p {
+    margin: 0;
+    font-size: 13px;
+}
+
+.arch-arrow {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.comparison-section {
+    margin-top: 50px;
+}
+
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border: 1px solid #ddd;
+}
+
+.comparison-table th,
+.comparison-table td {
+    padding: 15px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+
+.comparison-table th {
+    background-color: #667eea;
+    color: white;
+    font-weight: bold;
+}
+
+.comparison-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.comparison-table tr:hover {
+    background-color: #f0f0f0;
+}
+</style>
+{% endblock %}

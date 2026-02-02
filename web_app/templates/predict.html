@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+
+{% block title %}Predict - IndustriSense AI{% endblock %}
+
+{% block content %}
+<div class="predict">
+    <h1 class="page-title">Make a Prediction</h1>
+
+    <div class="predict-container">
+        <div class="predict-form-section">
+            <h2>Enter Machine Parameters</h2>
+            <form id="predictionForm" class="prediction-form">
+                <div class="form-group">
+                    <label for="air_temp">Air Temperature (K):</label>
+                    <input type="number" id="air_temp" placeholder="295.3" step="0.1" required>
+                    <small>Range: 295-305</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="process_temp">Process Temperature (K):</label>
+                    <input type="number" id="process_temp" placeholder="310.0" step="0.1" required>
+                    <small>Range: 305-315</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="rotational_speed">Rotational Speed (rpm):</label>
+                    <input type="number" id="rotational_speed" placeholder="1500" step="1" required>
+                    <small>Range: 1168-2886</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="torque">Torque (Nm):</label>
+                    <input type="number" id="torque" placeholder="42.8" step="0.1" required>
+                    <small>Range: 3.0-76.6</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="tool_wear">Tool Wear (minutes):</label>
+                    <input type="number" id="tool_wear" placeholder="0" step="1" min="0" required>
+                    <small>Range: 0-253</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="stress_index">Stress Index:</label>
+                    <input type="number" id="stress_index" placeholder="50" step="1" required>
+                    <small>Range: 0-200</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="temp_diff">Temperature Differential (K):</label>
+                    <input type="number" id="temp_diff" placeholder="14.7" step="0.1" required>
+                    <small>Calculated: Process - Air Temperature</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="temp_diff_wear">Temp Diff × Wear:</label>
+                    <input type="number" id="temp_diff_wear" placeholder="0" step="0.1" required>
+                    <small>Interaction feature (auto-calculated)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="speed_torque">Speed × Torque:</label>
+                    <input type="number" id="speed_torque" placeholder="0" step="1" required>
+                    <small>Interaction feature (auto-calculated)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="is_anomaly">Is Anomaly:</label>
+                    <select id="is_anomaly" required>
+                        <option value="0">Normal</option>
+                        <option value="1">Anomalous</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-large btn-primary">Get Prediction</button>
+            </form>
+        </div>
+
+        <div class="predict-results-section" id="resultsSection" style="display: none;">
+            <h2>Prediction Results</h2>
+            <div class="results-container">
+                <div class="result-card result-failure">
+                    <h3>Failure Risk</h3>
+                    <p class="result-value" id="failureRisk">--</p>
+                    <p class="result-status" id="riskLevel">--</p>
+                    <div class="progress-bar-large">
+                        <div class="progress-fill" id="riskBar" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="result-card result-wear">
+                    <h3>Tool Wear Estimation</h3>
+                    <p class="result-value" id="toolWear">-- min</p>
+                    <p class="result-label">Cumulative minutes</p>
+                </div>
+
+                <div class="result-card result-rul">
+                    <h3>Remaining Useful Life (RUL)</h3>
+                    <p class="result-value" id="rul">-- min</p>
+                    <p class="result-label">Until maintenance required</p>
+                </div>
+            </div>
+
+            <div class="recommendations">
+                <h3>📋 Recommendations</h3>
+                <div id="recommendations"></div>
+            </div>
+
+            <button class="btn btn-secondary" onclick="resetForm()">New Prediction</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.predict-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.predict-form-section,
+.predict-results-section {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.predict-form-section h2,
+.predict-results-section h2 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 15px;
+}
+
+.prediction-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
+
+.form-group input,
+.form-group select {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+}
+
+.form-group small {
+    margin-top: 3px;
+    color: #999;
+    font-size: 12px;
+}
+
+.results-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.result-card {
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    color: white;
+}
+
+.result-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+}
+
+.result-value {
+    font-size: 32px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.result-status {
+    margin: 5px 0;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.result-label {
+    margin: 5px 0 0 0;
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+.result-failure {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.result-wear {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.result-rul {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.progress-bar-large {
+    height: 30px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.progress-bar-large .progress-fill {
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.7);
+    transition: width 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.recommendations {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+    border-left: 4px solid #667eea;
+}
+
+.recommendations h3 {
+    margin-top: 0;
+}
+
+.recommendation-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+    color: #666;
+}
+
+.recommendation-item:last-child {
+    border-bottom: none;
+}
+
+@media (max-width: 768px) {
+    .predict-container {
+        grid-template-columns: 1fr;
+    }
+
+    .results-container {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // Get input values
+    const features = [
+        parseFloat(document.getElementById('air_temp').value),
+        parseFloat(document.getElementById('process_temp').value),
+        parseFloat(document.getElementById('rotational_speed').value),
+        parseFloat(document.getElementById('torque').value),
+        parseFloat(document.getElementById('tool_wear').value),
+        parseFloat(document.getElementById('stress_index').value),
+        parseFloat(document.getElementById('temp_diff').value),
+        parseFloat(document.getElementById('temp_diff_wear').value),
+        parseFloat(document.getElementById('speed_torque').value),
+        parseFloat(document.getElementById('is_anomaly').value)
+    ];
+
+    try {
+        const response = await fetch('/api/predict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ features })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            document.getElementById('failureRisk').textContent = result.failure_probability + '%';
+            document.getElementById('riskLevel').textContent = result.risk_level;
+            document.getElementById('riskBar').style.width = result.failure_probability + '%';
+            document.getElementById('toolWear').textContent = result.tool_wear_minutes + ' min';
+            document.getElementById('rul').textContent = result.remaining_useful_life + ' min';
+
+            // Generate recommendations
+            let recs = '';
+            if (result.risk_level === 'CRITICAL') {
+                recs += '<div class="recommendation-item">🚨 URGENT: Schedule maintenance immediately</div>';
+                recs += '<div class="recommendation-item">⚠️ Do not operate equipment beyond safe limits</div>';
+                recs += '<div class="recommendation-item">📞 Contact maintenance team right away</div>';
+            } else if (result.risk_level === 'WARNING') {
+                recs += '<div class="recommendation-item">⚡ Schedule preventive maintenance soon</div>';
+                recs += '<div class="recommendation-item">🔍 Monitor equipment closely</div>';
+                recs += '<div class="recommendation-item">📅 Plan maintenance within next few shifts</div>';
+            } else {
+                recs += '<div class="recommendation-item">✅ Equipment operating normally</div>';
+                recs += '<div class="recommendation-item">👁️ Continue routine monitoring</div>';
+                recs += '<div class="recommendation-item">⏰ RUL: ' + result.remaining_useful_life + ' minutes until next service</div>';
+            }
+            document.getElementById('recommendations').innerHTML = recs;
+
+            document.getElementById('resultsSection').style.display = 'block';
+            document.querySelectorAll('.prediction-form input, .prediction-form select').forEach(el => el.disabled = true);
+        }
+    } catch (error) {
+        alert('Error making prediction: ' + error.message);
+    }
+});
+
+function resetForm() {
+    document.getElementById('predictionForm').reset();
+    document.getElementById('resultsSection').style.display = 'none';
+    document.querySelectorAll('.prediction-form input, .prediction-form select').forEach(el => el.disabled = false);
+}
+
+// Auto-calculate interaction features
+document.getElementById('process_temp').addEventListener('change', () => {
+    const air_temp = parseFloat(document.getElementById('air_temp').value) || 0;
+    const process_temp = parseFloat(document.getElementById('process_temp').value) || 0;
+    document.getElementById('temp_diff').value = (process_temp - air_temp).toFixed(1);
+});
+
+document.getElementById('tool_wear').addEventListener('change', () => {
+    const temp_diff = parseFloat(document.getElementById('temp_diff').value) || 0;
+    const tool_wear = parseFloat(document.getElementById('tool_wear').value) || 0;
+    document.getElementById('temp_diff_wear').value = (temp_diff * tool_wear).toFixed(1);
+});
+
+document.getElementById('rotational_speed').addEventListener('change', () => {
+    const speed = parseFloat(document.getElementById('rotational_speed').value) || 0;
+    const torque = parseFloat(document.getElementById('torque').value) || 0;
+    document.getElementById('speed_torque').value = (speed * torque).toFixed(0);
+});
+</script>
+{% endblock %}

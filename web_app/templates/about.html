@@ -1,0 +1,401 @@
+{% extends "base.html" %}
+
+{% block title %}About - IndustriSense AI{% endblock %}
+
+{% block content %}
+<div class="about">
+    <div class="about-hero">
+        <h1>🏭 IndustriSense AI</h1>
+        <p class="tagline">Predictive Maintenance for Modern Industry</p>
+    </div>
+
+    <div class="about-content">
+        <section class="about-section">
+            <h2>What is IndustriSense AI?</h2>
+            <p>IndustriSense AI is an advanced predictive maintenance system powered by machine learning. It analyzes machine operational data to predict failures and estimate remaining useful life, enabling proactive maintenance scheduling and reducing unexpected downtime.</p>
+        </section>
+
+        <section class="about-section">
+            <h2>Key Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>⚡ Real-Time Predictions</h3>
+                    <p>Instant failure risk assessment based on current machine parameters</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔮 RUL Estimation</h3>
+                    <p>Accurate remaining useful life predictions for maintenance planning</p>
+                </div>
+                <div class="feature-card">
+                    <h3>📊 Advanced Analytics</h3>
+                    <p>Feature importance analysis and model performance metrics</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🎯 Risk Classification</h3>
+                    <p>Automatic categorization into Critical, Warning, and Normal states</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔍 Explainability</h3>
+                    <p>Understand why predictions are made with detailed feature analysis</p>
+                </div>
+                <div class="feature-card">
+                    <h3>💻 User-Friendly Dashboard</h3>
+                    <p>Intuitive interface designed for maintenance operators and engineers</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="about-section">
+            <h2>Technology Stack</h2>
+            <div class="tech-stack">
+                <div class="tech-category">
+                    <h3>Machine Learning</h3>
+                    <ul>
+                        <li><strong>XGBoost</strong> - Gradient boosting models</li>
+                        <li><strong>scikit-learn</strong> - Feature importance & metrics</li>
+                        <li><strong>Pandas/NumPy</strong> - Data manipulation</li>
+                    </ul>
+                </div>
+                <div class="tech-category">
+                    <h3>Web Application</h3>
+                    <ul>
+                        <li><strong>Flask</strong> - Python web framework</li>
+                        <li><strong>Jinja2</strong> - Template engine</li>
+                        <li><strong>HTML5/CSS3</strong> - Responsive design</li>
+                        <li><strong>JavaScript</strong> - Interactive features</li>
+                    </ul>
+                </div>
+                <div class="tech-category">
+                    <h3>Data & Processing</h3>
+                    <ul>
+                        <li><strong>Python 3.x</strong> - Core language</li>
+                        <li><strong>Matplotlib/Seaborn</strong> - Visualizations</li>
+                        <li><strong>Pickle</strong> - Model serialization</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="about-section">
+            <h2>System Architecture</h2>
+            <p>The system consists of two complementary ML models:</p>
+            <div class="architecture-overview">
+                <div class="model-overview">
+                    <h3>Failure Classification Model</h3>
+                    <p><strong>Type:</strong> XGBoost Binary Classifier</p>
+                    <p><strong>Purpose:</strong> Predicts probability of equipment failure (0-100%)</p>
+                    <p><strong>Features:</strong> 10 engineered parameters including temperature differentials and operational interactions</p>
+                    <p><strong>Output:</strong> Risk classification (Critical/Warning/Normal) and confidence probability</p>
+                </div>
+                <div class="model-overview">
+                    <h3>RUL Prognosis Model</h3>
+                    <p><strong>Type:</strong> XGBoost Regressor</p>
+                    <p><strong>Purpose:</strong> Estimates tool wear and remaining useful life</p>
+                    <p><strong>Features:</strong> 9 engineered parameters for wear prediction</p>
+                    <p><strong>Output:</strong> Tool wear in minutes and RUL countdown</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="about-section">
+            <h2>How It Works</h2>
+            <ol class="process-steps">
+                <li>
+                    <strong>Data Collection</strong>
+                    <p>Real-time machine operational parameters (temperature, speed, torque, etc.)</p>
+                </li>
+                <li>
+                    <strong>Feature Engineering</strong>
+                    <p>Transform raw parameters into 10 meaningful features including interaction terms</p>
+                </li>
+                <li>
+                    <strong>Model Prediction</strong>
+                    <p>Both classifier and regressor generate predictions simultaneously</p>
+                </li>
+                <li>
+                    <strong>Risk Assessment</strong>
+                    <p>Classify machine status and estimate time until maintenance needed</p>
+                </li>
+                <li>
+                    <strong>Action & Decision</strong>
+                    <p>Operators receive alerts and recommendations for maintenance scheduling</p>
+                </li>
+            </ol>
+        </section>
+
+        <section class="about-section">
+            <h2>Critical Limitations</h2>
+            <div class="limitations-box">
+                <h3>⚠️ Important Considerations</h3>
+                <ul>
+                    <li><strong>Class Imbalance:</strong> Model exhibits extreme imbalance (96.6% normal, 3.4% failure). Predictions should be interpreted as relative risk rankings rather than absolute probabilities.</li>
+                    <li><strong>Snapshot-Based:</strong> Predictions are based on instantaneous machine state, not temporal degradation patterns.</li>
+                    <li><strong>Static Training:</strong> Model was trained on historical data; accuracy may degrade with distribution shift.</li>
+                    <li><strong>Feature-Limited:</strong> Predictions depend on availability of required operational parameters.</li>
+                    <li><strong>No Real-Time Monitoring:</strong> Current system provides batch predictions, not continuous streaming analysis.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="about-section">
+            <h2>Project Team & Support</h2>
+            <p><strong>Development:</strong> Developed as part of the IndustriSense AI initiative for predictive maintenance research and implementation.</p>
+            <p><strong>Contact:</strong> For questions or support, please refer to the project documentation or contact the development team.</p>
+            <p><strong>Documentation:</strong> Complete technical documentation available in the <code>docs/</code> folder.</p>
+        </section>
+
+        <section class="about-section">
+            <h2>Version & Roadmap</h2>
+            <div class="version-info">
+                <div class="version-card">
+                    <h3>Current Version</h3>
+                    <p><strong>v1.0 (Phase 1)</strong></p>
+                    <p>Core dual-model architecture with dashboard and explainability</p>
+                </div>
+                <div class="version-card">
+                    <h3>Phase 2 (Future)</h3>
+                    <p>✨ Planned enhancements:</p>
+                    <ul>
+                        <li>Real-time data integration & streaming</li>
+                        <li>Model retraining pipeline</li>
+                        <li>Feedback loop for continuous improvement</li>
+                        <li>Database for prediction history</li>
+                        <li>Advanced visualization dashboard</li>
+                        <li>Mobile application</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<style>
+.about-hero {
+    text-align: center;
+    padding: 60px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px;
+    margin-bottom: 40px;
+}
+
+.about-hero h1 {
+    margin: 0 0 10px 0;
+    font-size: 48px;
+}
+
+.tagline {
+    margin: 0;
+    font-size: 20px;
+    opacity: 0.9;
+}
+
+.about-content {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.about-section {
+    background: white;
+    padding: 30px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.about-section h2 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 15px;
+}
+
+.about-section h3 {
+    color: #555;
+    margin-top: 20px;
+}
+
+.about-section p {
+    color: #666;
+    line-height: 1.6;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.feature-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.feature-card h3 {
+    margin: 0 0 10px 0;
+    color: white;
+}
+
+.feature-card p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+}
+
+.tech-stack {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.tech-category {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.tech-category h3 {
+    margin-top: 0;
+}
+
+.tech-category ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.tech-category li {
+    padding: 8px 0;
+    color: #666;
+}
+
+.architecture-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.model-overview {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.model-overview h3 {
+    margin-top: 0;
+    color: white;
+}
+
+.model-overview p {
+    color: rgba(255, 255, 255, 0.9);
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+.process-steps {
+    list-style: none;
+    padding: 0;
+    counter-reset: step-counter;
+}
+
+.process-steps li {
+    counter-increment: step-counter;
+    margin-bottom: 20px;
+    padding-left: 40px;
+    position: relative;
+    color: #666;
+}
+
+.process-steps li::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: 0;
+    top: 0;
+    background: #667eea;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.process-steps strong {
+    display: block;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.limitations-box {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.limitations-box h3 {
+    margin-top: 0;
+    color: #856404;
+}
+
+.limitations-box ul {
+    padding-left: 20px;
+}
+
+.limitations-box li {
+    color: #856404;
+    margin: 10px 0;
+    line-height: 1.6;
+}
+
+.version-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.version-card {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.version-card h3 {
+    margin-top: 0;
+    color: white;
+}
+
+.version-card p {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.version-card ul {
+    padding-left: 20px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.version-card li {
+    margin: 8px 0;
+}
+
+code {
+    background-color: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+}
+</style>
+{% endblock %}

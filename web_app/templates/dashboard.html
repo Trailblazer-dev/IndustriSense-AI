@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - IndustriSense AI{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h1 class="page-title">Machine Maintenance Dashboard</h1>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Machines</h3>
+            <p class="stat-value" id="total-machines">{{ machines|length }}</p>
+        </div>
+        <div class="stat-card critical">
+            <h3>🔴 Critical</h3>
+            <p class="stat-value" id="critical-count">{{ machines|selectattr('status', 'equalto', 'CRITICAL')|list|length }}</p>
+        </div>
+        <div class="stat-card warning">
+            <h3>🟡 Warning</h3>
+            <p class="stat-value" id="warning-count">{{ machines|selectattr('status', 'equalto', 'WARNING')|list|length }}</p>
+        </div>
+        <div class="stat-card normal">
+            <h3>🟢 Normal</h3>
+            <p class="stat-value" id="normal-count">{{ machines|selectattr('status', 'equalto', 'NORMAL')|list|length }}</p>
+        </div>
+    </div>
+
+    <h2 class="section-title">Machine Status Overview</h2>
+    <div class="machines-grid">
+        {% for machine in machines %}
+        <div class="machine-card status-{{ machine.status|lower }}">
+            <div class="card-header">
+                <h3>Machine {{ machine.id }}</h3>
+                <span class="status-badge status-{{ machine.status|lower }}">{{ machine.status }}</span>
+            </div>
+            <div class="card-content">
+                <div class="metric">
+                    <span class="metric-label">Failure Risk</span>
+                    <span class="metric-value">{{ machine.failure_risk }}%</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ machine.failure_risk }}%"></div>
+                    </div>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Tool Wear</span>
+                    <span class="metric-value">{{ machine.tool_wear }} min</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">RUL</span>
+                    <span class="metric-value">{{ machine.rul }} min</span>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-small btn-primary" onclick="loadMachineDetails({{ machine.id }})">Details</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Machine Details Modal -->
+    <div id="machineModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeMachineModal()">&times;</span>
+            <div id="machineDetails"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function loadMachineDetails(machineId) {
+    fetch(`/api/machines/${machineId}`)
+        .then(response => response.json())
+        .then(data => {
+            let html = `<h2>Machine ${data.machine_id} - Detailed Analysis</h2>`;
+            html += `<div class="details-grid">`;
+            html += `<div class="detail-item"><strong>Failure Probability:</strong> ${data.failure_probability}%</div>`;
+            html += `<div class="detail-item"><strong>Tool Wear:</strong> ${data.tool_wear_minutes} minutes</div>`;
+            html += `<div class="detail-item"><strong>RUL:</strong> ${data.remaining_useful_life} minutes</div>`;
+            html += `</div>`;
+            html += `<h3>Features</h3>`;
+            html += `<table class="features-table">`;
+            for (const [feature, value] of Object.entries(data.features)) {
+                html += `<tr><td>${feature}</td><td>${parseFloat(value).toFixed(2)}</td></tr>`;
+            }
+            html += `</table>`;
+            document.getElementById('machineDetails').innerHTML = html;
+            document.getElementById('machineModal').style.display = 'block';
+        });
+}
+
+function closeMachineModal() {
+    document.getElementById('machineModal').style.display = 'none';
+}
+
+window.onclick = function(event) {
+    const modal = document.getElementById('machineModal');
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Refresh stats every 30 seconds
+setInterval(() => {
+    fetch('/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('total-machines').textContent = data.total_machines;
+            document.getElementById('critical-count').textContent = data.critical_count;
+            document.getElementById('warning-count').textContent = data.warning_count;
+            document.getElementById('normal-count').textContent = data.normal_count;
+        });
+}, 30000);
+</script>
+{% endblock %}
