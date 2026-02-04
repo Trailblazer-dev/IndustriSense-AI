@@ -1,0 +1,53 @@
+{
+  "model_type": "XGBoost Binary Classifier",
+  "training_approach": "80/20 Train-Test Split with 5-Fold CV on Training Set",
+  "cv_folds": 5,
+  "scale_pos_weight": 28.52029520295203,
+  "hyperparameters": {
+    "max_depth": 6,
+    "learning_rate": 0.1,
+    "n_estimators": 200,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8
+  },
+  "cv_performance": {
+    "mean_accuracy": 0.9880000000000001,
+    "std_accuracy": 0.0012022115038544594,
+    "mean_recall": 0.8190572390572392,
+    "std_recall": 0.02829845648063648,
+    "mean_precision": 0.8264520965474311,
+    "std_precision": 0.030799007520723717,
+    "mean_f1": 0.8222017772460252,
+    "std_f1": 0.017539942292013905,
+    "mean_roc_auc": 0.9760851502249158,
+    "std_roc_auc": 0.012110165311893888
+  },
+  "test_performance": {
+    "accuracy": 0.988,
+    "recall": 0.8382352941176471,
+    "precision": 0.8142857142857143,
+    "f1_score": 0.8260869565217391,
+    "roc_auc": 0.9821656923639022,
+    "true_negatives": 1919,
+    "false_positives": 13,
+    "false_negatives": 11,
+    "true_positives": 57,
+    "test_set_size": 2000
+  },
+  "features": [
+    "Air temperature [K]",
+    "Process temperature [K]",
+    "Rotational speed [rpm]",
+    "Torque [Nm]",
+    "Tool wear [min]",
+    "Stress Index",
+    "Temp Diff [K]",
+    "Temp_Diff_x_Wear",
+    "Speed_x_Torque",
+    "is_anomaly"
+  ],
+  "srs_compliance": {
+    "nfr_3_reliability": "Test Recall = 0.8382 (high value = more failures caught)",
+    "fr_5_f_beta_optimization": "Test F1 = 0.8261 (weighted precision-recall)"
+  }
+}

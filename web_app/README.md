@@ -1,210 +1,246 @@
-# Flask Web Application Setup
+# IndustriSense AI - Web Application
 
-## Installation
+Professional predictive maintenance dashboard for monitoring industrial equipment health, predicting failures, and optimizing maintenance schedules using machine learning.
 
-1. **Navigate to web_app directory:**
-```bash
+## 🏗️ Architecture Overview
+
+### Application Stack
+- **Framework**: Flask 3.0.0 (Python Web Framework)
+- **Frontend**: HTML5, CSS3, Vanilla JavaScript
+- **ML Models**: XGBoost (Classification & Regression)
+- **Data Processing**: Pandas, NumPy, Scikit-learn
+- **Visualization**: Matplotlib, Seaborn
+- **Environment**: Python 3.14.2
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.14.2+ installed and in PATH
+- Windows, macOS, or Linux
+- ~500MB disk space for dependencies
+
+### 1. Navigate to Web App Directory
+```powershell
 cd web_app
 ```
 
-2. **Create a virtual environment:**
+### 2. Automated Setup (Recommended)
+**Windows:**
+```powershell
+.\run.bat
+```
+
+**macOS/Linux:**
 ```bash
+bash run.sh
+```
+
+### 3. Manual Setup
+```powershell
+# Create virtual environment
 python -m venv venv
-.\venv\Scripts\Activate.ps1  # Windows
+
+# Activate virtual environment
+.\venv\Scripts\activate  # Windows
 # or
-source venv/bin/activate     # macOS/Linux
-```
+source venv/bin/activate  # macOS/Linux
 
-3. **Install dependencies:**
-```bash
+# Install dependencies
 pip install -r requirements.txt
-```
 
-## Running the Application
-
-### Development Mode
-```bash
+# Run Flask app
 python app.py
 ```
-The application will be available at: `http://localhost:5000`
 
-### Production Mode
-```bash
-set FLASK_ENV=production  # Windows
-# or
-export FLASK_ENV=production  # macOS/Linux
+### 4. Access Application
+Open browser to: **http://localhost:5000**
 
-gunicorn -w 4 -b 0.0.0.0:5000 app:app
-```
+## 📊 Pages & Features
 
-## Project Structure
+### Dashboard (`/`)
+Real-time machine monitoring with live statistics
+- **Stat Cards**: Total machines, Critical count, Warnings, Normal operations
+- **Machine Cards**: 10 sampled machines with failure risk, tool wear, RUL, and status
+- **Status Thresholds:**
+  - 🔴 **CRITICAL**: Failure risk ≥ 80%
+  - 🟡 **WARNING**: Failure risk 50-79%
+  - 🟢 **NORMAL**: Failure risk < 50%
 
-```
-web_app/
-├── app.py                    # Main Flask application
-├── config.py                 # Configuration settings
-├── requirements.txt          # Python dependencies
-├── README.md                 # This file
-├── templates/
-│   ├── base.html            # Base template with navbar
-│   ├── dashboard.html       # Machine status dashboard
-│   ├── analytics.html       # Feature importance analysis
-│   ├── models.html          # Model details and performance
-│   ├── predict.html         # Prediction interface
-│   ├── settings.html        # Settings configuration
-│   ├── about.html           # About and documentation
-│   └── error.html           # Error page
-└── static/
-    ├── css/
-    │   └── style.css        # Main stylesheet
-    └── js/
-        └── main.js          # JavaScript utilities
-```
+### Analytics (`/analytics`)
+ML model analysis and feature importance
+- Feature importance tables (Classifier & Regressor)
+- Visual charts and key insights
+- Data-driven recommendations
 
-## Features
+### Models (`/models`)
+Machine learning model specifications
+- Classifier: XGBoost Binary Classification (10 features)
+- Regressor: XGBoost Regression for Tool Wear (9 features)
+- Performance metrics and system architecture
 
-### 1. Dashboard
-- Real-time machine status overview
-- Risk classification (Critical/Warning/Normal)
-- Tool wear and RUL estimates
-- Interactive machine details modal
+### Predict (`/predict`)
+Interactive prediction interface
+- 10 input fields for machine parameters
+- Real-time failure probability & RUL prediction
+- Auto-calculated interaction features
 
-### 2. Analytics
-- Feature importance visualizations
-- Model performance insights
-- Classifier vs Regressor comparison
-- Key insights and findings
-
-### 3. Models
-- Classifier architecture and specs
-- Regressor architecture and specs
-- System architecture diagram
-- Model performance comparison
-
-### 4. Prediction
-- Manual machine parameter input
-- Real-time prediction generation
-- Automatic feature calculation
-- Actionable recommendations
-
-### 5. Settings
-- Alert threshold configuration
+### Settings (`/settings`)
+User configuration and preferences
+- Alert threshold adjustment
 - Notification preferences
 - Data retention policies
-- Developer settings
 
-### 6. About
-- Project overview
-- Technology stack details
-- System architecture explanation
-- Limitations and constraints
-- Future roadmap (Phase 2)
+### About (`/about`)
+Project documentation
+- Feature showcase
+- Technology stack
+- System architecture
+- Limitations and roadmap
 
-## API Endpoints
+## 🔌 API Endpoints
 
-### Dashboard Data
-- `GET /` - Main dashboard page
-- `GET /api/stats` - Overall system statistics
-- `GET /api/machines/<id>` - Details for specific machine
+### GET /api/stats
+```json
+{
+  "total": 10,
+  "critical": 2,
+  "warning": 3,
+  "normal": 5
+}
+```
 
-### Predictions
-- `POST /api/predict` - Generate prediction for new data
+### GET /api/machines/<id>
+```json
+{
+  "id": 42,
+  "failure_risk": 75.3,
+  "tool_wear": 185.2,
+  "rul": 68,
+  "status": "WARNING"
+}
+```
 
-### Pages
-- `GET /analytics` - Feature importance analysis
-- `GET /models` - Model details and comparison
-- `GET /predict` - Prediction interface
-- `GET /settings` - Settings page
-- `GET /about` - About page
+### POST /api/predict
+```json
+{
+  "features": [305.2, 310.5, 2000, 45.0, ...]
+}
+```
 
-## Configuration
+## 🗂️ Data & Models
+
+### Input Data
+- **Location**: `../data/processed/features_engineered_raw.csv`
+- **Records**: 10,000 samples
+- **Features**: 10 engineered features for classification, 9 for regression
+- **Source**: AI4I 2020 Predictive Maintenance dataset
+
+### Trained ML Models
+- **Classifier**: `../src/models/xgboost_classifier.pkl` (binary failure classification)
+- **Regressor**: `../src/models/xgboost_wear_regressor.pkl` (tool wear prediction)
+- **Importance**: `../src/models/feature_importance.csv`, `wear_feature_importance.csv`
+
+## ⚙️ Configuration
 
 ### Environment Variables
-Set in `config.py` or as environment variables:
-
-```python
-FLASK_ENV=development  # or production
-SECRET_KEY=your-secret-key
-```
-
-### Model Paths
-By default, the app looks for trained models in:
-```
-../src/models/
-  ├── xgboost_classifier.pkl
-  └── xgboost_wear_regressor.pkl
-```
-
-### Data Paths
-Feature-engineered data expected at:
-```
-../data/processed/
-  └── features_engineered_raw.csv
-```
-
-## Usage Examples
-
-### Starting the Server
-```bash
-# Development
+**Development** (default):
+```powershell
+set FLASK_ENV=development
 python app.py
+```
 
-# Production
+**Production**:
+```powershell
+set FLASK_ENV=production
+set SECRET_KEY=your-secret-key-here
 gunicorn -w 4 -b 0.0.0.0:5000 app:app
 ```
 
-### Making Predictions via API
-```bash
-curl -X POST http://localhost:5000/api/predict \
-  -H "Content-Type: application/json" \
-  -d '{
-    "features": [295.3, 310.0, 1500, 42.8, 0, 50, 14.7, 0, 63000000, 0]
-  }'
+## 📦 Dependencies
+
+```
+Flask==3.0.0              # Web framework
+Flask-CORS==4.0.0         # Cross-origin requests
+pandas>=2.2.0             # Data manipulation (Python 3.14 compatible)
+numpy>=2.0.0              # Numerical computing (Python 3.14 compatible)
+scikit-learn>=1.3.0       # ML utilities
+xgboost>=2.0.0            # Gradient boosting models
+matplotlib>=3.8.0         # Data visualization
+seaborn>=0.13.0           # Statistical visualization
 ```
 
-### Accessing Dashboard
-Open browser and navigate to: `http://localhost:5000`
+## 🎨 Design
 
-## Troubleshooting
+- **Responsive**: Mobile-first design (desktop, tablet, mobile)
+- **Color Scheme**: Purple gradient with status colors
+- **Components**: Cards, modals, forms, tables, progress bars
+- **Animations**: Smooth transitions and hover effects
 
-### Models Not Found
-Ensure trained models exist in `../src/models/` directory:
-- `xgboost_classifier.pkl`
-- `xgboost_wear_regressor.pkl`
+## 🛠️ Troubleshooting
 
-### Data Not Loading
-Check that data file exists at:
+### "ModuleNotFoundError: No module named 'pandas'"
+Activate virtual environment first:
+```powershell
+.\venv\Scripts\activate
+python app.py
+```
+
+### Port 5000 Already in Use
+```powershell
+netstat -ano | findstr :5000
+taskkill /PID <PID> /F
+```
+
+### Models/Data Files Not Found
+Ensure these paths exist:
+- `../src/models/xgboost_classifier.pkl`
+- `../src/models/xgboost_wear_regressor.pkl`
 - `../data/processed/features_engineered_raw.csv`
 
-### Port Already in Use
-Change port in `app.py`:
-```python
-app.run(host='127.0.0.1', port=8000)  # Change 5000 to 8000
+Run training notebooks if missing:
+- Notebook 3: `3_Failure_Classification_Modeling.ipynb`
+- Notebook 4: `4_RUL_Prognosis_Modeling.ipynb`
+
+## 🚀 Production Deployment
+
+### Using Gunicorn
+```powershell
+pip install gunicorn
+set FLASK_ENV=production
+set SECRET_KEY=your-secret-key
+gunicorn -w 4 -b 0.0.0.0:5000 app:app
 ```
 
-### Import Errors
-Ensure all dependencies are installed:
-```bash
-pip install -r requirements.txt
+### Using Docker
+```dockerfile
+FROM python:3.14-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+ENV FLASK_ENV=production
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "app:app"]
 ```
 
-## Next Steps (Phase 2)
+## 📚 Related Notebooks
 
-Planned enhancements:
-- [ ] Real-time data streaming integration
-- [ ] Model retraining pipeline
-- [ ] Feedback loop for continuous improvement
-- [ ] Historical data dashboard
-- [ ] Advanced visualization library (Chart.js, Plotly)
-- [ ] Mobile responsive improvements
-- [ ] Database integration (SQLAlchemy)
-- [ ] Authentication/Authorization
-- [ ] API rate limiting
-- [ ] Docker containerization
+- **Notebook 1**: `1_EDA.ipynb` - Exploratory data analysis
+- **Notebook 2**: `2_Feature_Engineering.ipynb` - Feature creation
+- **Notebook 3**: `3_Failure_Classification_Modeling.ipynb` - Classifier
+- **Notebook 4**: `4_RUL_Prognosis_Modeling.ipynb` - RUL regressor
+- **Notebook 5**: `5_XAI_and_Interpretation.ipynb` - Model interpretation
 
-## Support
+## 💡 Key Features
 
-For issues or questions, refer to:
-- Main README: `../README.md`
-- Project documentation: `../docs/`
-- Notebook 5 XAI: `../notebooks/5_XAI_and_Interpretation.ipynb`
+✅ Real-time machine monitoring
+✅ ML-powered failure prediction
+✅ Remaining useful life (RUL) estimation
+✅ Feature importance analysis
+✅ Interactive prediction interface
+✅ Responsive mobile-friendly design
+✅ RESTful API endpoints
+✅ Professional documentation
+
+---
+
+**Questions?** Check the main project README: `../README.md`

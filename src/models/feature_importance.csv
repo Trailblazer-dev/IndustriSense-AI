@@ -1,0 +1,11 @@
+feature,importance
+Speed_x_Torque,0.2293598
+Rotational speed [rpm],0.22930056
+Tool wear [min],0.13350186
+Torque [Nm],0.11191353
+Stress Index,0.10736777
+Temp Diff [K],0.06283136
+Temp_Diff_x_Wear,0.06029515
+Air temperature [K],0.030957786
+Process temperature [K],0.026926132
+is_anomaly,0.0075460644

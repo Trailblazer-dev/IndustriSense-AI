@@ -28,14 +28,22 @@ def load_models():
         return None, None
 
 def load_data():
-    """Load feature-engineered data"""
+    """Load feature-engineered data (SCALED version for model compatibility)"""
     data_dir = app.config['DATA_DIR']
     try:
-        df = pd.read_csv(os.path.join(data_dir, 'features_engineered_raw.csv'))
+        # IMPORTANT: Load SCALED features because models were trained on scaled data
+        # Using raw features causes extreme predictions (near 100%) due to feature magnitude mismatch
+        df = pd.read_csv(os.path.join(data_dir, 'features_engineered_scaled.csv'))
         return df
     except FileNotFoundError as e:
         print(f"Error loading data: {e}")
-        return None
+        print(f"Note: Trying raw features as fallback (not recommended)...")
+        try:
+            # Fallback to raw if scaled not available
+            df = pd.read_csv(os.path.join(data_dir, 'features_engineered_raw.csv'))
+            return df
+        except FileNotFoundError:
+            return None
 
 # Load models and data at startup
 classifier, regressor = load_models()
@@ -81,7 +89,7 @@ def dashboard():
             'failure_risk': round(failure_prob, 1),
             'tool_wear': round(tool_wear, 1),
             'rul': rul,
-            'status': 'CRITICAL' if failure_prob >= 70 else ('WARNING' if failure_prob >= 40 else 'NORMAL'),
+            'status': 'CRITICAL' if failure_prob >= 95 else ('WARNING' if failure_prob >= 50 else 'NORMAL'),
             'timestamp': datetime.now().isoformat()
         })
     
@@ -241,11 +249,11 @@ def get_stats():
     
     return jsonify({
         'total_machines': len(df),
-        'critical_count': int((predictions >= 0.7).sum()),
-        'warning_count': int(((predictions >= 0.4) & (predictions < 0.7)).sum()),
-        'normal_count': int((predictions < 0.4).sum()),
-        'average_failure_risk': round(predictions.mean() * 100, 2),
-        'max_failure_risk': round(predictions.max() * 100, 2),
+        'critical_count': int((predictions >= 0.95).sum()),
+        'warning_count': int(((predictions >= 0.5) & (predictions < 0.95)).sum()),
+        'normal_count': int((predictions < 0.5).sum()),
+        'average_failure_risk': round(float(predictions.mean()) * 100, 2),
+        'max_failure_risk': round(float(predictions.max()) * 100, 2),
         'timestamp': datetime.now().isoformat()
     })
 

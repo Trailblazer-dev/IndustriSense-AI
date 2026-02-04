@@ -1,0 +1,15 @@
+{
+  "title": "SHAP Explainability Analysis",
+  "models": [
+    "xgboost_classifier (failure prediction)",
+    "xgboost_wear_regressor (tool wear)"
+  ],
+  "artifacts": [
+    "shap_failure_summary.png - Global feature importance",
+    "shap_instance_explanations.png - Individual decision waterfall",
+    "decision_threshold_analysis.png - Risk classification boundaries",
+    "maintenance_dashboard.html - Operator dashboard prototype"
+  ],
+  "timestamp": "2026-02-02T22:49:18.644133",
+  "phase": "1 - Snapshot-based (Phase 2 requires temporal data)"
+}

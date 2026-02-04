@@ -1,5 +1,5 @@
 @echo off
-REM IndustriSense AI Web Application Startup Script (Windows with Anaconda)
+REM IndustriSense AI Web Application Startup Script (Windows)
 
 echo.
 echo ====================================
@@ -7,24 +7,25 @@ echo IndustriSense AI - Web Application
 echo ====================================
 echo.
 
-REM Initialize Anaconda (required for conda command)
-call C:\Users\richv\anaconda3\Scripts\activate.bat
-
-REM Check if ml_env exists, if not create it
-echo Checking for ml_env Anaconda environment...
-conda env list | findstr "ml_env" >nul
-if errorlevel 1 (
-    echo Creating ml_env environment...
-    conda create -n ml_env python=3.10 -y
+REM Check if virtual environment exists
+if not exist "venv" (
+    echo Creating virtual environment...
+    python -m venv venv
 )
 
-REM Activate the ml_env environment
-echo Activating ml_env environment...
-call conda activate ml_env
+REM Activate virtual environment
+echo Activating virtual environment...
+call venv\Scripts\activate.bat
 
-REM Install dependencies
-echo Installing Flask dependencies...
-pip install -r requirements.txt -q
+REM Upgrade pip first
+echo Upgrading pip...
+python -m pip install --upgrade pip --quiet
+
+REM Install dependencies with only pre-built wheels
+echo Installing dependencies...
+echo This may take a minute...
+pip install --only-binary :all: flask flask-cors python-dotenv
+pip install --only-binary :all: numpy pandas scikit-learn xgboost matplotlib seaborn
 
 REM Start the application
 echo.
