@@ -33,6 +33,18 @@
                 <h3>Machine {{ machine.id }}</h3>
                 <span class="status-badge status-{{ machine.status|lower }}">{{ machine.status }}</span>
             </div>
+            
+            <!-- Model Reliability Warning -->
+            <div class="reliability-indicator reliability-{{ machine.model_reliability|lower }}">
+                {% if machine.model_reliability == 'UNRELIABLE' %}
+                    ⚠️ EXPERIMENTAL PREDICTION
+                {% elif machine.model_reliability == 'MODERATE' %}
+                    ⚠️ BETA PREDICTION
+                {% else %}
+                    ✓ GOOD PREDICTION
+                {% endif %}
+            </div>
+            
             <div class="card-content">
                 <div class="metric">
                     <span class="metric-label">Failure Risk</span>
@@ -40,14 +52,33 @@
                     <div class="progress-bar">
                         <div class="progress-fill" style="width: {{ machine.failure_risk }}%"></div>
                     </div>
+                    <span class="metric-note">✓ Production-ready classifier</span>
                 </div>
+                
+                <!-- Hybrid: Actual Tool Wear -->
                 <div class="metric">
-                    <span class="metric-label">Tool Wear</span>
-                    <span class="metric-value">{{ machine.tool_wear }} min</span>
+                    <span class="metric-label">Tool Wear (Actual)</span>
+                    <span class="metric-value metric-actual">{{ machine.actual_tool_wear }} min</span>
+                    <span class="metric-sublabel">Ground truth measurement</span>
                 </div>
+                
+                <!-- Hybrid: Predicted Tool Wear -->
                 <div class="metric">
-                    <span class="metric-label">RUL</span>
-                    <span class="metric-value">{{ machine.rul }} min</span>
+                    <span class="metric-label">Tool Wear (Predicted)</span>
+                    <span class="metric-value metric-predicted">{{ machine.predicted_tool_wear }} min</span>
+                    <span class="metric-sublabel error-highlight">Error: ±{{ machine.wear_error }} min ({{ machine.error_percent }}%)</span>
+                </div>
+                
+                <!-- Hybrid: Actual RUL -->
+                <div class="metric">
+                    <span class="metric-label">RUL (Actual)</span>
+                    <span class="metric-value metric-actual">{{ machine.actual_rul }} min</span>
+                </div>
+                
+                <!-- Hybrid: Predicted RUL -->
+                <div class="metric">
+                    <span class="metric-label">RUL (Predicted)</span>
+                    <span class="metric-value metric-predicted">{{ machine.predicted_rul }} min</span>
                 </div>
             </div>
             <div class="card-footer">
@@ -71,18 +102,84 @@ function loadMachineDetails(machineId) {
     fetch(`/api/machines/${machineId}`)
         .then(response => response.json())
         .then(data => {
-            let html = `<h2>Machine ${data.machine_id} - Detailed Analysis</h2>`;
-            html += `<div class="details-grid">`;
-            html += `<div class="detail-item"><strong>Failure Probability:</strong> ${data.failure_probability}%</div>`;
-            html += `<div class="detail-item"><strong>Tool Wear:</strong> ${data.tool_wear_minutes} minutes</div>`;
-            html += `<div class="detail-item"><strong>RUL:</strong> ${data.remaining_useful_life} minutes</div>`;
+            let html = `<h2>Machine ${data.machine_id} - Detailed Analysis (Transparency Report)</h2>`;
+            
+            // MODEL RELIABILITY WARNING (PROMINENT)
+            html += `<div class="reliability-warning">`;
+            html += `<h3>⚠️ Model Reliability Assessment</h3>`;
+            html += `<div class="reliability-status reliability-${data.model_reliability.status.toLowerCase()}">`;
+            html += `<strong>Status: ${data.model_reliability.status}</strong><br>`;
+            html += `${data.model_reliability.warning}<br><br>`;
+            html += `<em>${data.model_reliability.assessment}</em>`;
             html += `</div>`;
-            html += `<h3>Features</h3>`;
+            html += `</div>`;
+            
+            // Failure Analysis
+            html += `<div class="details-section">`;
+            html += `<h3>🟢 Failure Risk Analysis (Production-Ready)</h3>`;
+            html += `<div class="details-grid">`;
+            html += `<div class="detail-item"><strong>Failure Probability:</strong> ${data.failure_analysis.probability_percent}%</div>`;
+            html += `<div class="detail-item"><strong>Status:</strong> <span class="status-badge status-${data.failure_analysis.status.toLowerCase()}">${data.failure_analysis.status}</span></div>`;
+            html += `<div class="detail-item"><strong>Note:</strong> ${data.failure_analysis.note}</div>`;
+            html += `</div>`;
+            html += `</div>`;
+            
+            // Tool Wear Analysis (Hybrid)
+            html += `<div class="details-section">`;
+            html += `<h3>⚙️ Tool Wear Analysis (Actual vs. Predicted)</h3>`;
+            html += `<div class="comparison-table">`;
+            html += `<table>`;
+            html += `<tr><th>Metric</th><th>Actual (Ground Truth)</th><th>Predicted (Beta Model)</th><th>Difference</th></tr>`;
+            html += `<tr>`;
+            html += `<td><strong>Tool Wear</strong></td>`;
+            html += `<td class="metric-actual">${data.tool_wear_analysis.actual_tool_wear_minutes} min</td>`;
+            html += `<td class="metric-predicted">${data.tool_wear_analysis.predicted_tool_wear_minutes} min</td>`;
+            html += `<td class="error-highlight">±${data.tool_wear_analysis.prediction_error_minutes} min (${data.tool_wear_analysis.prediction_error_percent}%)</td>`;
+            html += `</tr>`;
+            html += `</table>`;
+            html += `</div>`;
+            html += `<p class="warning-text"><em>⚠️ RUL regressor is in BETA. Large error margins indicate model needs improvement with real-world training data.</em></p>`;
+            html += `</div>`;
+            
+            // RUL Analysis (Hybrid)
+            html += `<div class="details-section">`;
+            html += `<h3>⏱️ Remaining Useful Life (RUL) Analysis</h3>`;
+            html += `<div class="comparison-table">`;
+            html += `<table>`;
+            html += `<tr><th>Metric</th><th>Actual (Ground Truth)</th><th>Predicted (Beta Model)</th></tr>`;
+            html += `<tr>`;
+            html += `<td><strong>RUL</strong></td>`;
+            html += `<td class="metric-actual"><strong>${data.rul_analysis.actual_remaining_useful_life}</strong> min</td>`;
+            html += `<td class="metric-predicted"><strong>${data.rul_analysis.predicted_remaining_useful_life}</strong> min</td>`;
+            html += `</tr>`;
+            html += `</table>`;
+            html += `</div>`;
+            html += `<p class="warning-text">Difference: ${data.rul_analysis.rul_difference} minutes. Consider actual measured values for production decisions.</p>`;
+            html += `</div>`;
+            
+            // Features Table
+            html += `<div class="details-section">`;
+            html += `<h3>📊 Feature Values (Scaled)</h3>`;
             html += `<table class="features-table">`;
+            html += `<tr><th>Feature</th><th>Scaled Value</th></tr>`;
             for (const [feature, value] of Object.entries(data.features)) {
-                html += `<tr><td>${feature}</td><td>${parseFloat(value).toFixed(2)}</td></tr>`;
+                html += `<tr><td>${feature}</td><td>${parseFloat(value).toFixed(3)}</td></tr>`;
             }
             html += `</table>`;
+            html += `</div>`;
+            
+            // Transparency Note
+            html += `<div class="details-section info-box">`;
+            html += `<p><strong>📋 Transparency Report:</strong></p>`;
+            html += `<p>${data.model_performance_note}</p>`;
+            html += `<p style="margin-top: 10px; color: #d32f2f;"><strong>Development Status:</strong></p>`;
+            html += `<ul style="margin-left: 20px;">`;
+            html += `<li>✓ <strong>Failure Classifier:</strong> 83.8% recall - Production ready</li>`;
+            html += `<li>⚠️ <strong>RUL Regressor:</strong> Beta/Experimental - High error margins, needs improvement</li>`;
+            html += `<li>📌 <strong>Recommendation:</strong> Use actual tool wear measurements for critical decisions until regressor accuracy improves</li>`;
+            html += `</ul>`;
+            html += `</div>`;
+            
             document.getElementById('machineDetails').innerHTML = html;
             document.getElementById('machineModal').style.display = 'block';
         });
