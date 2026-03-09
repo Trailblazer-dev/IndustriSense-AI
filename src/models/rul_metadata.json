@@ -1,41 +1,41 @@
 {
   "model_type": "XGBoost Wear Regressor (RUL Proxy)",
-  "training_approach": "80/20 Train-Test Split with 5-Fold CV on Training Set",
-  "task": "Snapshot-based wear estimation (not temporal prognosis)",
+  "training_approach": "80/20 holdout split",
   "max_tool_wear_minutes": 254,
-  "cv_folds": 5,
   "hyperparameters": {
     "objective": "reg:squarederror",
     "max_depth": 6,
     "learning_rate": 0.1,
     "n_estimators": 200,
     "subsample": 0.8,
-    "colsample_bytree": 0.8
-  },
-  "cv_performance": {
-    "mean_mae": 0.9231503129005432,
-    "std_mae": 0.02356738178589854,
-    "mean_rmse": 1.3341086940222227,
-    "std_rmse": 0.0639577882155343,
-    "mean_r2": 0.9995541214942932,
-    "std_r2": 3.720546563130184e-05
+    "colsample_bytree": 0.8,
+    "random_state": 42
   },
   "test_performance": {
-    "mae": 0.8839754462242126,
-    "rmse": 1.3742861628737029,
-    "r2": 0.999557614326477,
+    "mae": 51.30975129795075,
+    "rmse": 61.86137607493309,
+    "r2": 0.10364388127784496,
     "test_set_size": 2000
   },
-  "features": [
+  "features_original": [
     "Air temperature [K]",
     "Process temperature [K]",
     "Rotational speed [rpm]",
     "Torque [Nm]",
-    "Stress Index",
     "Temp Diff [K]",
-    "Temp_Diff_x_Wear",
     "Speed_x_Torque",
     "is_anomaly"
   ],
+  "feature_name_map": {
+    "Air temperature [K]": "Air_temperature_K_",
+    "Process temperature [K]": "Process_temperature_K_",
+    "Rotational speed [rpm]": "Rotational_speed_rpm_",
+    "Torque [Nm]": "Torque_Nm_",
+    "Temp Diff [K]": "Temp_Diff_K_",
+    "Speed_x_Torque": "Speed_x_Torque",
+    "is_anomaly": "is_anomaly"
+  },
+  "target_original": "Tool wear [min]",
+  "target_safe": "Tool_wear_min_",
   "rul_conversion": "RUL = 254 - Predicted_Wear (minutes)"
 }

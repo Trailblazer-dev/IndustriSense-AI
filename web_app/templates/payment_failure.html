@@ -1,0 +1,546 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Failed - IndustriSense AI{% endblock %}
+
+{% block content %}
+<div class="failure-wrapper">
+    <div class="container">
+        <div class="failure-container">
+            <!-- Error Icon & Header -->
+            <div class="failure-header">
+                <div class="failure-icon">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <h1 class="failure-title">Payment Failed</h1>
+                <p class="failure-subtitle">
+                    We couldn't process your payment. Please try again or contact support for help.
+                </p>
+            </div>
+
+            <!-- Error Details -->
+            <div class="error-details">
+                <h3 class="details-title">Error Information</h3>
+                <div class="error-box">
+                    <div class="error-code">
+                        <span class="error-label">Error Code</span>
+                        <span class="error-value">{{ error_code }}</span>
+                    </div>
+                    <div class="error-message">
+                        <span class="error-label">Message</span>
+                        <span class="error-value">{{ error_message }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Troubleshooting Steps -->
+            <div class="troubleshooting">
+                <h3 class="steps-title">How to Resolve This</h3>
+                <ol class="solutions-list">
+                    <li>
+                        <div class="solution-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div class="solution-content">
+                            <h5>Verify Phone Number</h5>
+                            <p>Ensure your phone number is correct and your M-Pesa account is active.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="solution-icon">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <div class="solution-content">
+                            <h5>Check M-Pesa Balance</h5>
+                            <p>Make sure your M-Pesa account has sufficient balance for this transaction.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="solution-icon">
+                            <i class="fas fa-wifi"></i>
+                        </div>
+                        <div class="solution-content">
+                            <h5>Verify Connection</h5>
+                            <p>Ensure your internet connection is stable and strong before retrying.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="solution-icon">
+                            <i class="fas fa-redo"></i>
+                        </div>
+                        <div class="solution-content">
+                            <h5>Try Again</h5>
+                            <p>Wait a few moments and attempt the payment again - it may be a temporary issue.</p>
+                        </div>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- CTA Buttons -->
+            <div class="failure-actions">
+                <a href="/plans" class="action-button action-primary">
+                    <i class="fas fa-redo"></i>
+                    Try Again
+                </a>
+                <a href="/" class="action-button action-secondary">
+                    <i class="fas fa-home"></i>
+                    Back Home
+                </a>
+            </div>
+
+            <!-- Support Section -->
+            <div class="support-section">
+                <h3 class="support-title">Still Need Help?</h3>
+                <div class="support-grid">
+                    <div class="support-card">
+                        <h5 class="support-heading">Payment Methods</h5>
+                        <p class="support-text">We accept M-Pesa, credit/debit cards, and bank transfers. Choose the method that works best for you.</p>
+                    </div>
+                    <div class="support-card">
+                        <h5 class="support-heading">Processing Time</h5>
+                        <p class="support-text">M-Pesa payments are instant. Credit card payments may take 1-2 minutes to process.</p>
+                    </div>
+                    <div class="support-card">
+                        <h5 class="support-heading">24/7 Support</h5>
+                        <p class="support-text">Our support team is always available to help. Reach out via email or contact form anytime.</p>
+                    </div>
+                    <div class="support-card">
+                        <h5 class="support-heading">No Charges</h5>
+                        <p class="support-text">Your payment wasn't completed, so no charges have been made to your account.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Support Button -->
+            <div class="contact-section">
+                <a href="mailto:support@industrisense.ai?subject=Payment%20Failed%20-%20Error%20Code:%20{{ error_code }}" class="contact-button">
+                    <i class="fas fa-headset"></i>
+                    Contact Support
+                </a>
+            </div>
+
+            <!-- FAQ -->
+            <div class="common-issues">
+                <h3 class="issues-title">Common Issues & Solutions</h3>
+                <div class="issues-grid">
+                    <div class="issue-item">
+                        <h5 class="issue-question">Insufficient M-Pesa Balance?</h5>
+                        <p class="issue-answer">Top up your M-Pesa account with sufficient balance and retry the payment.</p>
+                    </div>
+                    <div class="issue-item">
+                        <h5 class="issue-question">Wrong Phone Number?</h5>
+                        <p class="issue-answer">Go back to the checkout and enter the correct phone number linked to your M-Pesa account.</p>
+                    </div>
+                    <div class="issue-item">
+                        <h5 class="issue-question">Network Issues?</h5>
+                        <p class="issue-answer">Check your internet connection and ensure it's stable before attempting the payment again.</p>
+                    </div>
+                    <div class="issue-item">
+                        <h5 class="issue-question">Still Not Working?</h5>
+                        <p class="issue-answer">Contact our support team right away at support@industrisense.ai for immediate assistance.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="info-box error-info">
+                <div class="info-content">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <p class="info-title">No charges were made</p>
+                        <p class="info-text">Your subscription was not created. You can safely retry without worrying about duplicate charges.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Failure Wrapper */
+    .failure-wrapper {
+        background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+        padding: 3rem 0;
+        min-height: 100vh;
+    }
+
+    .failure-container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    /* Failure Header */
+    .failure-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        animation: slideUp 0.6s ease-out;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .failure-icon {
+        font-size: 4rem;
+        color: #dc3545;
+        margin-bottom: 1rem;
+    }
+
+    .failure-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #212529;
+        margin: 0 0 0.75rem 0;
+        letter-spacing: -0.3px;
+    }
+
+    .failure-subtitle {
+        font-size: 1.1rem;
+        color: #6c757d;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    /* Error Details */
+    .error-details {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .details-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #212529;
+        margin: 0 0 1.5rem 0;
+    }
+
+    .error-box {
+        background: #fff5f5;
+        border: 1px solid #f5c6cb;
+        border-radius: 6px;
+        padding: 1.5rem;
+    }
+
+    .error-code,
+    .error-message {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .error-code:last-child,
+    .error-message:last-child {
+        margin-bottom: 0;
+    }
+
+    .error-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .error-value {
+        font-size: 0.95rem;
+        color: #721c24;
+        font-family: 'Courier New', monospace;
+        word-break: break-all;
+    }
+
+    /* Troubleshooting */
+    .troubleshooting {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .steps-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #212529;
+        margin: 0 0 1.5rem 0;
+    }
+
+    .solutions-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        counter-reset: solution;
+    }
+
+    .solutions-list li {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .solutions-list li:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .solution-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        background: #ffe7e7;
+        border-radius: 50%;
+        flex-shrink: 0;
+        font-size: 1.1rem;
+        color: #dc3545;
+    }
+
+    .solution-content h5 {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #212529;
+        margin: 0 0 0.4rem 0;
+    }
+
+    .solution-content p {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    /* Actions */
+    .failure-actions {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .action-button {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        padding: 1rem 1.5rem;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .action-primary {
+        background: #dc3545;
+        color: #ffffff;
+    }
+
+    .action-primary:hover {
+        background: #c82333;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+    }
+
+    .action-secondary {
+        background: #f8f9fa;
+        color: #212529;
+        border: 1px solid #e9ecef;
+    }
+
+    .action-secondary:hover {
+        background: #e9ecef;
+        border-color: #dee2e6;
+    }
+
+    /* Support Section */
+    .support-section {
+        margin-bottom: 2rem;
+    }
+
+    .support-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #212529;
+        text-align: center;
+        margin: 0 0 1.5rem 0;
+    }
+
+    .support-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .support-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .support-card:hover {
+        border-color: #dee2e6;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .support-heading {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #212529;
+        margin: 0 0 0.75rem 0;
+    }
+
+    .support-text {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    /* Contact Section */
+    .contact-section {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .contact-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 1rem 2rem;
+        background: #0d6efd;
+        color: #ffffff;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .contact-button:hover {
+        background: #0b5ed7;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+    }
+
+    /* Common Issues */
+    .common-issues {
+        margin-bottom: 2rem;
+    }
+
+    .issues-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #212529;
+        text-align: center;
+        margin: 0 0 1.5rem 0;
+    }
+
+    .issues-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .issue-item {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1.5rem;
+    }
+
+    .issue-question {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #212529;
+        margin: 0 0 0.75rem 0;
+    }
+
+    .issue-answer {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    /* Info Box */
+    .info-box {
+        background: #e7f1ff;
+        border: 1px solid #b3d9ff;
+        border-radius: 8px;
+        padding: 1.5rem;
+    }
+
+    .info-box.error-info {
+        background: #fff5f5;
+        border-color: #f5c6cb;
+    }
+
+    .info-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .info-content i {
+        font-size: 1.3rem;
+        flex-shrink: 0;
+        margin-top: 0.2rem;
+        color: #dc3545;
+    }
+
+    .info-box.error-info .info-content i {
+        color: #dc3545;
+    }
+
+    .info-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #212529;
+        margin: 0 0 0.3rem 0;
+    }
+
+    .info-text {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .failure-title {
+            font-size: 1.8rem;
+        }
+
+        .failure-actions {
+            flex-direction: column;
+        }
+
+        .support-grid,
+        .issues-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .error-details,
+        .troubleshooting {
+            padding: 1.5rem;
+        }
+    }
+</style>

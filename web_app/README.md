@@ -2,11 +2,35 @@
 
 Professional predictive maintenance dashboard for monitoring industrial equipment health, predicting failures, and optimizing maintenance schedules using machine learning.
 
+## ✨ Features
+
+### 🎨 Professional Website
+- **Modern Design** using Bootstrap 5
+- **Responsive Layout** - Works on all devices
+- **Professional Styling** with custom CSS
+- **Interactive Components** - Cards, Alerts, Modals
+- **Dark/Light Theme Ready** - Future enhancement
+
+### 💳 Payment Integration
+- **PayHero Integration** - Secure payment processing
+- **Flexible Payment Methods** - M-Pesa, Cards, Bank Transfers
+- **3 Pricing Tiers** - Starter, Professional, Enterprise
+- **Secure Checkout** - Form validation & encryption
+- **Payment Status Tracking** - Success/Failure callbacks
+
+### 📊 Predictive Analytics
+- **Machine Failure Detection** - XGBoost Classifier
+- **Remaining Useful Life Prediction** - Regression Model
+- **Real-time Monitoring** - Live dashboard updates
+- **Historical Tracking** - Performance trends
+- **Risk Assessment** - Automated failure risk scoring
+
 ## 🏗️ Architecture Overview
 
 ### Application Stack
 - **Framework**: Flask 3.0.0 (Python Web Framework)
-- **Frontend**: HTML5, CSS3, Vanilla JavaScript
+- **Frontend**: HTML5, CSS3, Bootstrap 5, Vanilla JavaScript
+- **Payment**: PayHero API Integration
 - **ML Models**: XGBoost (Classification & Regression)
 - **Data Processing**: Pandas, NumPy, Scikit-learn
 - **Visualization**: Matplotlib, Seaborn
@@ -24,7 +48,25 @@ Professional predictive maintenance dashboard for monitoring industrial equipmen
 cd web_app
 ```
 
-### 2. Automated Setup (Recommended)
+### 2. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Configure Environment
+Create a `.env` file:
+```env
+FLASK_ENV=development
+SECRET_KEY=your-secret-key
+PAYHERO_API_KEY=your_api_key
+PAYHERO_API_SECRET=your_api_secret
+PAYHERO_SANDBOX=true
+```
+
+See [PAYHERO_SETUP_GUIDE.md](PAYHERO_SETUP_GUIDE.md) for detailed PayHero configuration.
+
+### 4. Run Application
+
 **Windows:**
 ```powershell
 .\run.bat
@@ -35,20 +77,12 @@ cd web_app
 bash run.sh
 ```
 
-### 3. Manual Setup
-```powershell
-# Create virtual environment
-python -m venv venv
+**Manual:**
+```bash
+python app.py
+```
 
-# Activate virtual environment
-.\venv\Scripts\activate  # Windows
-# or
-source venv/bin/activate  # macOS/Linux
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run Flask app
+Application runs at: `http://localhost:5000`# Run Flask app
 python app.py
 ```
 

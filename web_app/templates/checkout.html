@@ -1,0 +1,635 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout - {{ plan.name }} Plan | IndustriSense AI{% endblock %}
+
+{% block content %}
+<div class="checkout-wrapper">
+    <div class="container">
+        <div class="checkout-header">
+            <h1 class="checkout-title">Complete Your Purchase</h1>
+            <p class="checkout-subtitle">{{ plan.name }} Plan - ${{ plan.price }}/month</p>
+        </div>
+
+        <div class="checkout-grid">
+            <!-- Order Summary Sidebar -->
+            <div class="checkout-sidebar">
+                <div class="order-summary">
+                    <h3 class="summary-title">Order Summary</h3>
+                    
+                    <div class="summary-plan">
+                        <div class="plan-header">
+                            <h5 class="plan-name">{{ plan.name }} Plan</h5>
+                        </div>
+                        
+                        <div class="summary-line">
+                            <span>Monthly Subscription</span>
+                            <strong>${{ plan.price }}.00</strong>
+                        </div>
+                        <div class="summary-line">
+                            <span>Setup Fee</span>
+                            <strong class="text-success">FREE</strong>
+                        </div>
+                        
+                        <div class="summary-divider"></div>
+                        
+                        <div class="summary-total">
+                            <span>Total Due Today</span>
+                            <strong>${{ plan.price }}.00</strong>
+                        </div>
+                        
+                        <p class="summary-note">Billed monthly. Cancel anytime with no penalties.</p>
+                    </div>
+
+                    <!-- Plan Features -->
+                    <div class="summary-features">
+                        <h6 class="features-title">What's Included</h6>
+                        <ul class="features-list">
+                            {% if plan.name == 'Starter' %}
+                                <li><i class="fas fa-check-circle"></i>Up to 5 machines</li>
+                                <li><i class="fas fa-check-circle"></i>Basic analytics</li>
+                                <li><i class="fas fa-check-circle"></i>Email support</li>
+                                <li><i class="fas fa-check-circle"></i>Weekly reports</li>
+                            {% elif plan.name == 'Professional' %}
+                                <li><i class="fas fa-check-circle"></i>Up to 50 machines</li>
+                                <li><i class="fas fa-check-circle"></i>Advanced analytics</li>
+                                <li><i class="fas fa-check-circle"></i>Priority support</li>
+                                <li><i class="fas fa-check-circle"></i>Daily reports</li>
+                                <li><i class="fas fa-check-circle"></i>API access</li>
+                            {% elif plan.name == 'Enterprise' %}
+                                <li><i class="fas fa-check-circle"></i>Unlimited machines</li>
+                                <li><i class="fas fa-check-circle"></i>Real-time predictions</li>
+                                <li><i class="fas fa-check-circle"></i>24/7 phone support</li>
+                                <li><i class="fas fa-check-circle"></i>Hourly reports</li>
+                                <li><i class="fas fa-check-circle"></i>Dedicated account manager</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+
+                    <a href="/plans" class="back-link">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Plans
+                    </a>
+                </div>
+            </div>
+
+            <!-- Checkout Form -->
+            <div class="checkout-form-section">
+                <form id="checkoutForm" onsubmit="processPayment(event)" class="checkout-form">
+                    <!-- Personal Information -->
+                    <fieldset class="form-section">
+                        <legend class="section-header">Personal Information</legend>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstName" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="firstName" name="first_name" 
+                                       placeholder="John" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="lastName" name="last_name" 
+                                       placeholder="Doe" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   placeholder="john@example.com" required>
+                            <small class="form-help">We'll send your receipt and setup instructions here</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <div class="input-prefix">
+                                <span class="prefix">+254</span>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       placeholder="712345678" pattern="[0-9]{9}" required>
+                            </div>
+                            <small class="form-help">For M-Pesa payment notifications</small>
+                        </div>
+                    </fieldset>
+
+                    <!-- Company Information -->
+                    <fieldset class="form-section">
+                        <legend class="section-header">Company Information</legend>
+
+                        <div class="form-group">
+                            <label for="company" class="form-label">Company Name</label>
+                            <input type="text" class="form-control" id="company" name="company" 
+                                   placeholder="Your Company Ltd">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="industry" class="form-label">Industry</label>
+                                <select class="form-control" id="industry" name="industry">
+                                    <option value="">Select Industry...</option>
+                                    <option value="manufacturing">Manufacturing</option>
+                                    <option value="automotive">Automotive</option>
+                                    <option value="food_beverage">Food & Beverage</option>
+                                    <option value="pharmaceuticals">Pharmaceuticals</option>
+                                    <option value="chemicals">Chemicals</option>
+                                    <option value="textiles">Textiles</option>
+                                    <option value="utilities">Utilities</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="machines" class="form-label">Number of Machines</label>
+                                <input type="number" class="form-control" id="machines" name="machines" 
+                                       placeholder="e.g., 10" min="1">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Terms & Conditions -->
+                    <fieldset class="form-section">
+                        <legend class="section-header">Terms & Consent</legend>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="terms" required>
+                            <label class="form-check-label" for="terms">
+                                I agree to the <a href="#" target="_blank">Terms of Service</a> and 
+                                <a href="#" target="_blank">Privacy Policy</a>
+                            </label>
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="newsletter">
+                            <label class="form-check-label" for="newsletter">
+                                Send me product updates and special offers
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <!-- Error Message -->
+                    <div id="errorMessage" class="alert alert-error d-none" role="alert">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span id="errorText"></span>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="submit-button" id="submitBtn">
+                        <i class="fas fa-lock"></i>
+                        Proceed to Payment
+                    </button>
+
+                    <div class="payment-note">
+                        <i class="fas fa-shield-alt"></i>
+                        Secure payment powered by PayHero
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Checkout Layout */
+    .checkout-wrapper {
+        background: #f8f9fa;
+        padding: 3rem 0;
+        min-height: 100vh;
+    }
+
+    .checkout-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .checkout-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #212529;
+        margin: 0 0 0.5rem 0;
+        letter-spacing: -0.3px;
+    }
+
+    .checkout-subtitle {
+        font-size: 1.1rem;
+        color: #6c757d;
+        margin: 0;
+    }
+
+    /* Grid Layout */
+    .checkout-grid {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 2rem;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    /* Sidebar */
+    .checkout-sidebar {
+        height: fit-content;
+        position: sticky;
+        top: 100px;
+    }
+
+    /* Order Summary */
+    .order-summary {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .summary-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #212529;
+        margin: 0 0 1.5rem 0;
+    }
+
+    .summary-plan {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .plan-header {
+        margin-bottom: 1rem;
+    }
+
+    .plan-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #0d6efd;
+        margin: 0;
+    }
+
+    .summary-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.6rem 0;
+        font-size: 0.95rem;
+        color: #6c757d;
+    }
+
+    .summary-line strong {
+        color: #212529;
+        font-weight: 600;
+    }
+
+    .text-success {
+        color: #198754;
+    }
+
+    .summary-divider {
+        height: 1px;
+        background: #e9ecef;
+        margin: 1rem 0;
+    }
+
+    .summary-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        font-size: 1.1rem;
+    }
+
+    .summary-total strong {
+        color: #0d6efd;
+        font-size: 1.3rem;
+        font-weight: 700;
+    }
+
+    .summary-note {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin: 1rem 0 0 0;
+        line-height: 1.5;
+    }
+
+    /* Features List */
+    .summary-features {
+        margin-bottom: 1.5rem;
+    }
+
+    .features-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #212529;
+        text-transform: uppercase;
+        margin: 0 0 1rem 0;
+        letter-spacing: 0.3px;
+    }
+
+    .features-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .features-list li {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.5rem 0;
+        font-size: 0.9rem;
+        color: #495057;
+    }
+
+    .features-list i {
+        color: #0d6efd;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #0d6efd;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .back-link:hover {
+        gap: 0.75rem;
+        color: #0b5ed7;
+    }
+
+    /* Checkout Form */
+    .checkout-form-section {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .checkout-form {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .form-section {
+        border: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .section-header {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #212529;
+        margin: 0 0 1.2rem 0;
+        padding: 0;
+        border: none;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .form-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #212529;
+        margin: 0;
+    }
+
+    .form-control,
+    .form-check-input {
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 0.65rem 0.9rem;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        background: #ffffff;
+        color: #212529;
+    }
+
+    .form-control:focus,
+    .form-check-input:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+        outline: none;
+    }
+
+    .form-control::placeholder {
+        color: #adb5bd;
+    }
+
+    .input-prefix {
+        display: flex;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .prefix {
+        display: flex;
+        align-items: center;
+        padding: 0.65rem 0.9rem;
+        background: #f8f9fa;
+        color: #6c757d;
+        font-weight: 500;
+        border-right: 1px solid #dee2e6;
+    }
+
+    .input-prefix .form-control {
+        border: none;
+        border-radius: 0;
+        flex: 1;
+    }
+
+    .form-help {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+
+    .form-check {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.6rem;
+        padding: 0.7rem 0;
+    }
+
+    .form-check-input {
+        width: 1.1rem;
+        height: 1.1rem;
+        margin-top: 0.2rem;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+
+    .form-check-label {
+        font-size: 0.9rem;
+        color: #495057;
+        cursor: pointer;
+        line-height: 1.5;
+    }
+
+    .form-check-label a {
+        color: #0d6efd;
+        text-decoration: none;
+    }
+
+    .form-check-label a:hover {
+        text-decoration: underline;
+    }
+
+    /* Alert */
+    .alert-error {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 1rem;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .alert-error i {
+        flex-shrink: 0;
+    }
+
+    .d-none {
+        display: none;
+    }
+
+    /* Submit Button */
+    .submit-button {
+        background: #0d6efd;
+        color: #ffffff;
+        border: none;
+        padding: 1rem 1.5rem;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+    }
+
+    .submit-button:hover {
+        background: #0b5ed7;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+    }
+
+    .submit-button:active {
+        transform: translateY(0);
+    }
+
+    .submit-button:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+
+    .payment-note {
+        text-align: center;
+        font-size: 0.85rem;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .checkout-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .checkout-sidebar {
+            position: static;
+            order: 2;
+        }
+
+        .checkout-form-section {
+            order: 1;
+        }
+
+        .checkout-title {
+            font-size: 1.8rem;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .order-summary {
+            padding: 1.5rem;
+        }
+    }
+</style>
+async function processPayment(event) {
+    event.preventDefault();
+    
+    const form = document.getElementById('checkoutForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const errorDiv = document.getElementById('errorMessage');
+    
+    // Disable submit button
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+
+    try {
+        const formData = new FormData(form);
+        const payload = {
+            plan: '{{ plan.plan_id }}',
+            first_name: formData.get('first_name'),
+            last_name: formData.get('last_name'),
+            email: formData.get('email'),
+            phone: formData.get('phone'),
+            company: formData.get('company'),
+            industry: formData.get('industry'),
+            machines: formData.get('machines')
+        };
+
+        const response = await fetch('/payment/process', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            // Redirect to PayHero payment page
+            window.location.href = data.payment_url;
+        } else {
+            // Show error
+            errorDiv.classList.remove('d-none');
+            document.getElementById('errorText').textContent = data.message || 'Payment processing failed';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-lock me-2"></i>Proceed to Payment (${{ plan.price }}.00)';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        errorDiv.classList.remove('d-none');
+        document.getElementById('errorText').textContent = 'An error occurred. Please try again.';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-lock me-2"></i>Proceed to Payment (${{ plan.price }}.00)';
+    }
+}
+</script>
+{% endblock %}

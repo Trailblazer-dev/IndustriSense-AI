@@ -1,46 +1,39 @@
 /* Main JavaScript file for IndustriSense AI */
 
-// Initialize tooltips and popovers
+// Initialize Bootstrap tooltips and popovers
 document.addEventListener('DOMContentLoaded', () => {
     console.log('IndustriSense AI Dashboard Initialized');
+    
+    // Initialize Bootstrap components
+    initializeBootstrap();
     initializeEventListeners();
 });
 
+function initializeBootstrap() {
+    // Initialize Bootstrap tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Initialize Bootstrap popovers
+    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    popoverTriggerList.map(function (popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl);
+    });
+}
+
 function initializeEventListeners() {
-    // Hamburger menu toggle
-    const hamburger = document.getElementById('hamburger');
-    const navMenu = document.getElementById('navMenu');
-    
-    if (hamburger && navMenu) {
-        hamburger.addEventListener('click', () => {
-            hamburger.classList.toggle('active');
-            navMenu.classList.toggle('active');
-        });
-        
-        // Close menu when navigating to a link
-        const navLinks = navMenu.querySelectorAll('.nav-link');
-        navLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                hamburger.classList.remove('active');
-                navMenu.classList.remove('active');
-            });
-        });
-        
-        // Close menu when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.navbar-container')) {
-                hamburger.classList.remove('active');
-                navMenu.classList.remove('active');
-            }
-        });
-    }
-    
-    // Close alerts
-    const closeButtons = document.querySelectorAll('.alert .close');
-    closeButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            this.parentElement.style.display = 'none';
-        });
+    // Close alerts automatically (Bootstrap dismiss still works with btn-close)
+    const alertElements = document.querySelectorAll('.alert');
+    alertElements.forEach(alert => {
+        // Auto-dismiss non-permanent alerts after 5 seconds
+        if (!alert.classList.contains('alert-persistent')) {
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }, 5000);
+        }
     });
 }
 

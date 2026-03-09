@@ -1,10 +1,8 @@
 feature,importance
-Temp_Diff_x_Wear,0.711571
-Stress Index,0.21828184
-Torque [Nm],0.03714282
-Temp Diff [K],0.021287182
-Air temperature [K],0.003360257
-Speed_x_Torque,0.0025617778
-is_anomaly,0.0020040195
-Process temperature [K],0.00198581
-Rotational speed [rpm],0.0018053701
+Temp Diff [K],0.1771815
+Air temperature [K],0.16039047
+Process temperature [K],0.15309586
+is_anomaly,0.13451473
+Speed_x_Torque,0.1301289
+Torque [Nm],0.12585273
+Rotational speed [rpm],0.11883581

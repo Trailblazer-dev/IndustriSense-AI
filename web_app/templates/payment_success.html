@@ -1,0 +1,456 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Successful - IndustriSense AI{% endblock %}
+
+{% block content %}
+<div class="success-wrapper">
+    <div class="container">
+        <div class="success-container">
+            <!-- Success Icon & Header -->
+            <div class="success-header">
+                <div class="success-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h1 class="success-title">Payment Successful!</h1>
+                <p class="success-subtitle">
+                    Thank you for choosing IndustriSense AI. Your subscription is now active.
+                </p>
+            </div>
+
+            <!-- Order Details -->
+            <div class="order-details">
+                <h3 class="details-title">Order Details</h3>
+                <div class="details-grid">
+                    <div class="detail-row">
+                        <span class="detail-label">Plan</span>
+                        <strong class="detail-value">{{ plan|capitalize }} Plan</strong>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Email</span>
+                        <strong class="detail-value">{{ email }}</strong>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Reference ID</span>
+                        <strong class="detail-value">{{ reference }}</strong>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Status</span>
+                        <span class="status-badge status-success">Confirmed</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Next Steps -->
+            <div class="next-steps">
+                <h3 class="steps-title">What's Next?</h3>
+                <ol class="steps-list">
+                    <li>
+                        <div class="step-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="step-content">
+                            <h5>Check Your Email</h5>
+                            <p>We've sent confirmation and setup instructions to your email address.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="step-icon">
+                            <i class="fas fa-key"></i>
+                        </div>
+                        <div class="step-content">
+                            <h5>Create Your Account</h5>
+                            <p>Set up your IndustriSense AI account with your login credentials.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="step-icon">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <div class="step-content">
+                            <h5>Connect Your Machines</h5>
+                            <p>Add your industrial machines to the dashboard with a few clicks.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="step-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="step-content">
+                            <h5>Start Monitoring</h5>
+                            <p>Begin real-time predictive maintenance analysis and insights.</p>
+                        </div>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- CTA Buttons -->
+            <div class="success-actions">
+                <a href="/" class="action-button action-primary">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Go to Dashboard
+                </a>
+                <a href="mailto:support@industrisense.ai" class="action-button action-secondary">
+                    <i class="fas fa-headset"></i>
+                    Contact Support
+                </a>
+            </div>
+
+            <!-- FAQ Section -->
+            <div class="faq-section">
+                <h3 class="faq-title">Frequently Asked Questions</h3>
+                <div class="faq-grid">
+                    <div class="faq-card">
+                        <h5 class="faq-question">When do I get access?</h5>
+                        <p class="faq-answer">Your account is active immediately. Check your email for login credentials and get started right away.</p>
+                    </div>
+                    <div class="faq-card">
+                        <h5 class="faq-question">Can I upgrade my plan?</h5>
+                        <p class="faq-answer">Absolutely! You can upgrade or downgrade anytime from your account settings with prorated adjustments.</p>
+                    </div>
+                    <div class="faq-card">
+                        <h5 class="faq-question">What about support?</h5>
+                        <p class="faq-answer">Our support team is available 24/7 to help. Contact us via email, phone, or live chat anytime.</p>
+                    </div>
+                    <div class="faq-card">
+                        <h5 class="faq-question">How do I cancel?</h5>
+                        <p class="faq-answer">You can cancel anytime with no penalties. Your access continues until the end of your billing cycle.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="info-box">
+                <div class="info-content">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <p class="info-title">Your subscription has started</p>
+                        <p class="info-text">You'll receive a renewal notice 7 days before your billing date.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Success Wrapper */
+    .success-wrapper {
+        background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+        padding: 3rem 0;
+        min-height: 100vh;
+    }
+
+    .success-container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    /* Success Header */
+    .success-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        animation: slideUp 0.6s ease-out;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .success-icon {
+        font-size: 4rem;
+        color: #198754;
+        margin-bottom: 1rem;
+    }
+
+    .success-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #212529;
+        margin: 0 0 0.75rem 0;
+        letter-spacing: -0.3px;
+    }
+
+    .success-subtitle {
+        font-size: 1.1rem;
+        color: #6c757d;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    /* Order Details */
+    .order-details {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .details-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #212529;
+        margin: 0 0 1.5rem 0;
+    }
+
+    .details-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .detail-value {
+        font-size: 0.95rem;
+        color: #212529;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 0.4rem 0.9rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .status-success {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    /* Next Steps */
+    .next-steps {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .steps-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #212529;
+        margin: 0 0 1.5rem 0;
+    }
+
+    .steps-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        counter-reset: step;
+    }
+
+    .steps-list li {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .steps-list li:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .step-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        background: #e7f1ff;
+        border-radius: 50%;
+        flex-shrink: 0;
+        font-size: 1.1rem;
+        color: #0d6efd;
+    }
+
+    .step-content h5 {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #212529;
+        margin: 0 0 0.4rem 0;
+    }
+
+    .step-content p {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    /* Actions */
+    .success-actions {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .action-button {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        padding: 1rem 1.5rem;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .action-primary {
+        background: #0d6efd;
+        color: #ffffff;
+    }
+
+    .action-primary:hover {
+        background: #0b5ed7;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+    }
+
+    .action-secondary {
+        background: #f8f9fa;
+        color: #0d6efd;
+        border: 1px solid #e9ecef;
+    }
+
+    .action-secondary:hover {
+        background: #e9ecef;
+        border-color: #dee2e6;
+    }
+
+    /* FAQ Section */
+    .faq-section {
+        margin-bottom: 2rem;
+    }
+
+    .faq-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #212529;
+        text-align: center;
+        margin: 0 0 1.5rem 0;
+    }
+
+    .faq-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .faq-card {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .faq-card:hover {
+        border-color: #dee2e6;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .faq-question {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #212529;
+        margin: 0 0 0.75rem 0;
+    }
+
+    .faq-answer {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    /* Info Box */
+    .info-box {
+        background: #e7f1ff;
+        border: 1px solid #b3d9ff;
+        border-radius: 8px;
+        padding: 1.5rem;
+    }
+
+    .info-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .info-content i {
+        color: #0d6efd;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+        margin-top: 0.2rem;
+    }
+
+    .info-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #212529;
+        margin: 0 0 0.3rem 0;
+    }
+
+    .info-text {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .success-title {
+            font-size: 1.8rem;
+        }
+
+        .success-actions {
+            flex-direction: column;
+        }
+
+        .faq-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .order-details,
+        .next-steps {
+            padding: 1.5rem;
+        }
+    }
+</style>

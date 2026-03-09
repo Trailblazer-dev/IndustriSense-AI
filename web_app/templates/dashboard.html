@@ -13,15 +13,15 @@
         </div>
         <div class="stat-card critical">
             <h3>🔴 Critical</h3>
-            <p class="stat-value" id="critical-count">{{ machines|selectattr('status', 'equalto', 'CRITICAL')|list|length }}</p>
+            <p class="stat-value" id="critical-count">{{ status_counts.critical }}</p>
         </div>
         <div class="stat-card warning">
             <h3>🟡 Warning</h3>
-            <p class="stat-value" id="warning-count">{{ machines|selectattr('status', 'equalto', 'WARNING')|list|length }}</p>
+            <p class="stat-value" id="warning-count">{{ status_counts.warning }}</p>
         </div>
         <div class="stat-card normal">
             <h3>🟢 Normal</h3>
-            <p class="stat-value" id="normal-count">{{ machines|selectattr('status', 'equalto', 'NORMAL')|list|length }}</p>
+            <p class="stat-value" id="normal-count">{{ status_counts.normal }}</p>
         </div>
     </div>
 
@@ -29,60 +29,36 @@
     <div class="machines-grid">
         {% for machine in machines %}
         <div class="machine-card status-{{ machine.status|lower }}">
+            <!-- Header: Machine ID + Status Badge -->
             <div class="card-header">
-                <h3>Machine {{ machine.id }}</h3>
+                <h3 class="machine-id">Machine {{ machine.id }}</h3>
                 <span class="status-badge status-{{ machine.status|lower }}">{{ machine.status }}</span>
             </div>
             
-            <!-- Model Reliability Warning -->
-            <div class="reliability-indicator reliability-{{ machine.model_reliability|lower }}">
-                {% if machine.model_reliability == 'UNRELIABLE' %}
-                    ⚠️ EXPERIMENTAL PREDICTION
-                {% elif machine.model_reliability == 'MODERATE' %}
-                    ⚠️ BETA PREDICTION
-                {% else %}
-                    ✓ GOOD PREDICTION
-                {% endif %}
+            <!-- Body: Key Metrics -->
+            <div class="card-body">
+                <!-- Primary: Failure Risk -->
+                <div class="metric-primary">
+                    <div class="metric-label">Failure Risk</div>
+                    <div class="metric-value-large">{{ machine.failure_risk }}%</div>
+                </div>
+                
+                <!-- Tool Wear Prediction -->
+                <div class="metric-row">
+                    <div class="metric-block">
+                        <div class="metric-label-small">Predicted Tool Wear</div>
+                        <div class="metric-value-medium">{{ machine.predicted_tool_wear }} min</div>
+                    </div>
+                    <div class="metric-block">
+                        <div class="metric-label-small">Remaining Useful Life</div>
+                        <div class="metric-value-medium">{{ machine.predicted_rul }} min</div>
+                    </div>
+                </div>
             </div>
             
-            <div class="card-content">
-                <div class="metric">
-                    <span class="metric-label">Failure Risk</span>
-                    <span class="metric-value">{{ machine.failure_risk }}%</span>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: {{ machine.failure_risk }}%"></div>
-                    </div>
-                    <span class="metric-note">✓ Production-ready classifier</span>
-                </div>
-                
-                <!-- Hybrid: Actual Tool Wear -->
-                <div class="metric">
-                    <span class="metric-label">Tool Wear (Actual)</span>
-                    <span class="metric-value metric-actual">{{ machine.actual_tool_wear }} min</span>
-                    <span class="metric-sublabel">Ground truth measurement</span>
-                </div>
-                
-                <!-- Hybrid: Predicted Tool Wear -->
-                <div class="metric">
-                    <span class="metric-label">Tool Wear (Predicted)</span>
-                    <span class="metric-value metric-predicted">{{ machine.predicted_tool_wear }} min</span>
-                    <span class="metric-sublabel error-highlight">Error: ±{{ machine.wear_error }} min ({{ machine.error_percent }}%)</span>
-                </div>
-                
-                <!-- Hybrid: Actual RUL -->
-                <div class="metric">
-                    <span class="metric-label">RUL (Actual)</span>
-                    <span class="metric-value metric-actual">{{ machine.actual_rul }} min</span>
-                </div>
-                
-                <!-- Hybrid: Predicted RUL -->
-                <div class="metric">
-                    <span class="metric-label">RUL (Predicted)</span>
-                    <span class="metric-value metric-predicted">{{ machine.predicted_rul }} min</span>
-                </div>
-            </div>
+            <!-- Footer: Timestamp -->
             <div class="card-footer">
-                <button class="btn btn-small btn-primary" onclick="loadMachineDetails({{ machine.id }})">Details</button>
+                <span class="timestamp">{{ machine.timestamp|default('Updated now', true) }}</span>
             </div>
         </div>
         {% endfor %}
