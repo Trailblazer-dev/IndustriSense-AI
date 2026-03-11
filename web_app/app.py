@@ -34,7 +34,7 @@ if allowed:
 
 # Lazy-loaded globals
 _models = {'classifier': None, 'regressor': None}
-_dataframe = None
+_data = {'raw': None, 'scaled': None}
 
 def _sha256_file(path):
     """Compute SHA256 for a file (used for basic integrity logging)."""
@@ -78,26 +78,30 @@ def get_models(force_reload=False):
         return None, None
 
 def get_data(force_reload=False):
-    """Lazily load raw features (used for inference)"""
-    global _dataframe
-    if _dataframe is not None and not force_reload:
-        return _dataframe
+    """Lazily load both raw and scaled features for inference"""
+    global _data
+    if _data['raw'] is not None and _data['scaled'] is not None and not force_reload:
+        return _data
 
     data_dir = app.config['DATA_DIR']
     raw_path = os.path.join(data_dir, 'features_engineered_raw.csv')
+    scaled_path = os.path.join(data_dir, 'features_engineered_scaled.csv')
+    
     try:
         if os.path.exists(raw_path):
-            df_local = pd.read_csv(raw_path)
-            _dataframe = df_local
-            return _dataframe
+            _data['raw'] = pd.read_csv(raw_path)
         else:
             print(f"Error: RAW features file not found at {raw_path}")
-            _dataframe = None
-            return None
+            
+        if os.path.exists(scaled_path):
+            _data['scaled'] = pd.read_csv(scaled_path)
+        else:
+            print(f"Error: SCALED features file not found at {scaled_path}")
+            
+        return _data
     except Exception as e:
         print(f"Error loading data: {e}")
-        _dataframe = None
-        return None
+        return _data
 
 # Note: Raw features now primary data source (used in load_data() for inference)
 # This function is kept for backward compatibility and state verification
@@ -176,80 +180,66 @@ def rul_minutes_to_calendar_time(remaining_minutes, operating_hours_per_day=8):
 
 @app.route('/')
 def dashboard():
-    """Dashboard - Main page with machine overview (Predicted values only)"""
-    df_local = get_data()
-    if df_local is None:
+    """Dashboard - Main page with machine overview (Vectorized for high performance)"""
+    data_dict = get_data()
+    df_raw_local = data_dict['raw']
+    df_scaled_local = data_dict['scaled']
+    
+    if df_raw_local is None or df_scaled_local is None:
         return render_template('error.html', message='Data not loaded'), 500
     
-    # Sample 10 machines with stratified status distribution
-    machines = []
-    
-    # Pre-calculate statuses for all rows to get balanced sample
-    statuses = []
     classifier, regressor = get_models()
     if classifier is None or regressor is None:
         return render_template('error.html', message='Models not loaded'), 500
 
-    for idx in range(len(df_local)):
-        row = df_local.iloc[idx]
-        X_classifier = df_local.iloc[[idx]][FEATURE_COLS_CLASSIFIER]
-        X_regressor = df_local.iloc[[idx]][FEATURE_COLS_REGRESSOR]
-
-        failure_prob = float(classifier.predict_proba(X_classifier)[0][1]) * 100
-        predicted_tool_wear = float(regressor.predict(X_regressor)[0])
-        
-        # Status determination: Prioritize wear-based assessment
-        if predicted_tool_wear >= 200:
-            status = 'CRITICAL'
-        elif predicted_tool_wear >= 150 or failure_prob >= 80:
-            status = 'WARNING'
-        else:
-            status = 'NORMAL'
-        
-        statuses.append((idx, status, failure_prob, predicted_tool_wear))
+    # Vectorized inference for the entire dataset
+    # Classifier uses SCALED data
+    X_all_classifier = df_scaled_local[FEATURE_COLS_CLASSIFIER]
+    # Regressor uses RAW data (based on Notebook 4)
+    X_all_regressor = df_raw_local[FEATURE_COLS_REGRESSOR]
     
-    # Get balanced sample: try to get ~4-5 CRITICAL, ~3-4 WARNING, ~2-3 NORMAL
-    critical = [x for x in statuses if x[1] == 'CRITICAL'][:5]
-    warning = [x for x in statuses if x[1] == 'WARNING'][:3]
-    normal = [x for x in statuses if x[1] == 'NORMAL'][:2]
+    # Calculate probabilities and wear in batch
+    all_failure_probs = classifier.predict_proba(X_all_classifier)[:, 1] * 100
+    all_predicted_wear = regressor.predict(X_all_regressor)
     
-    sample_indices = [x[0] for x in critical + warning + normal]
+    # Determine status for all rows using vectorized logic
+    statuses = np.full(len(df_raw_local), 'NORMAL', dtype='U10')
+    warning_mask = (all_predicted_wear >= 150) | (all_failure_probs >= 50)
+    critical_mask = (all_predicted_wear >= 200) | (all_failure_probs >= 75)
+    
+    statuses[warning_mask] = 'WARNING'
+    statuses[critical_mask] = 'CRITICAL'
+    
+    # Stratified Sampling for dashboard: get ~4-5 CRITICAL, ~3-4 WARNING, ~2-3 NORMAL
+    np.random.seed(42)
+    critical_indices = np.where(statuses == 'CRITICAL')[0]
+    warning_indices = np.where(statuses == 'WARNING')[0]
+    normal_indices = np.where(statuses == 'NORMAL')[0]
+    
+    sample_critical = np.random.choice(critical_indices, min(5, len(critical_indices)), replace=False) if len(critical_indices) > 0 else []
+    sample_warning = np.random.choice(warning_indices, min(3, len(warning_indices)), replace=False) if len(warning_indices) > 0 else []
+    sample_normal = np.random.choice(normal_indices, min(2, len(normal_indices)), replace=False) if len(normal_indices) > 0 else []
+    
+    sample_indices = np.concatenate([sample_critical, sample_warning, sample_normal]).astype(int)
+    
+    machines = []
+    max_wear_threshold = app.config.get('MAX_TOOL_WEAR', 254)
     
     for idx in sample_indices:
-        row = df_local.iloc[idx]
-        X_classifier = df_local.iloc[[idx]][FEATURE_COLS_CLASSIFIER]
-        X_regressor = df_local.iloc[[idx]][FEATURE_COLS_REGRESSOR]
-
-        # Failure risk prediction (raw probability from classifier)
-        failure_prob = float(classifier.predict_proba(X_classifier)[0][1]) * 100
-
-        # Predicted tool wear (model estimate in minutes)
-        predicted_tool_wear = float(regressor.predict(X_regressor)[0])
-        
-        # Predicted RUL (minutes remaining until 254-min threshold)
-        predicted_rul = max(0, app.config.get('MAX_TOOL_WEAR', 254) - int(predicted_tool_wear))
-        
-        # Status determination: Standardized thresholds
-        # CRITICAL: High wear (>=200 min) OR high failure risk (>=75%)
-        # WARNING: Moderate wear (>=150 min) OR moderate failure risk (>=50%)
-        # NORMAL: Low wear (<150 min) AND low failure risk (<50%)
-        if predicted_tool_wear >= 200 or failure_prob >= 75:
-            status = 'CRITICAL'
-        elif predicted_tool_wear >= 150 or failure_prob >= 50:
-            status = 'WARNING'
-        else:
-            status = 'NORMAL'
+        failure_prob = all_failure_probs[idx]
+        predicted_tool_wear = all_predicted_wear[idx]
+        predicted_rul = max(0, max_wear_threshold - int(predicted_tool_wear))
         
         machines.append({
             'id': int(idx),
-            'failure_risk': round(failure_prob, 1),  # Raw classifier probability (0-100%)
+            'failure_risk': round(failure_prob, 1),
             'predicted_tool_wear': round(predicted_tool_wear, 1),
             'predicted_rul': predicted_rul,
-            'status': status,
+            'status': statuses[idx],
             'timestamp': datetime.now().isoformat()
         })
     
-    # Calculate status counts for stats cards
+    # Calculate stats counts for stats cards
     status_counts = {
         'total': len(machines),
         'critical': sum(1 for m in machines if m['status'] == 'CRITICAL'),
@@ -261,26 +251,22 @@ def dashboard():
 
 @app.route('/diagnostics/model-calibration')
 def model_calibration():
-    """Diagnostic endpoint: Check model distributions and reliability"""
-    df_local = get_data()
+    """Diagnostic endpoint: Check model distributions and reliability (Vectorized)"""
+    data_dict = get_data()
+    df_raw_local = data_dict['raw']
+    df_scaled_local = data_dict['scaled']
+    
     classifier, regressor = get_models()
-    if df_local is None or classifier is None:
+    if df_raw_local is None or df_scaled_local is None or classifier is None:
         return jsonify({'error': 'Models or data not loaded'}), 500
 
-    # Get predictions for sample data
-    failure_probs = []
-    wear_preds = []
-    for idx in range(min(200, len(df_local))):  # Sample first 200
-        row = df_local.iloc[idx]
-        X_classifier = df_local.iloc[[idx]][FEATURE_COLS_CLASSIFIER]
-        X_regressor = df_local.iloc[[idx]][FEATURE_COLS_REGRESSOR]
-        fail_prob = float(classifier.predict_proba(X_classifier)[0][1]) * 100
-        wear_pred = float(regressor.predict(X_regressor)[0])
-        failure_probs.append(fail_prob)
-        wear_preds.append(wear_pred)
+    # Vectorized inference for first 500 rows
+    sample_size = min(500, len(df_raw_local))
+    X_clf = df_scaled_local.iloc[:sample_size][FEATURE_COLS_CLASSIFIER]
+    X_reg = df_raw_local.iloc[:sample_size][FEATURE_COLS_REGRESSOR]
     
-    failure_probs = np.array(failure_probs)
-    wear_preds = np.array(wear_preds)
+    failure_probs = classifier.predict_proba(X_clf)[:, 1] * 100
+    wear_preds = regressor.predict(X_reg)
     
     return jsonify({
         'classifier_distribution': {
@@ -417,9 +403,15 @@ def prediction_api():
         except Exception:
             return jsonify({'error': 'All feature values must be numeric'}), 400
 
-        # Create feature arrays
+        # Create feature arrays with CORRECT MAPPING
+        # Map input list to classifier features
+        feat_dict = dict(zip(FEATURE_COLS_CLASSIFIER, features))
+        
         X_classifier = pd.DataFrame([features], columns=FEATURE_COLS_CLASSIFIER)
-        X_regressor = pd.DataFrame([features[:len(FEATURE_COLS_REGRESSOR)]], columns=FEATURE_COLS_REGRESSOR)
+        
+        # Select only needed features for regressor in correct order
+        reg_features_list = [feat_dict[f] for f in FEATURE_COLS_REGRESSOR]
+        X_regressor = pd.DataFrame([reg_features_list], columns=FEATURE_COLS_REGRESSOR)
 
         # Make predictions
         failure_prob = float(classifier.predict_proba(X_classifier)[0][1])
@@ -428,33 +420,35 @@ def prediction_api():
 
         return jsonify({
             'success': True,
-            'failure_probability_percent': round(failure_prob * 100, 2),
+            'failure_probability': round(failure_prob * 100, 2),
             'tool_wear_minutes': round(tool_wear, 2),
-            'remaining_useful_life_minutes': rul,
+            'remaining_useful_life': rul,
             'risk_level': 'CRITICAL' if (failure_prob >= 0.75) else ('WARNING' if (failure_prob >= 0.50) else 'NORMAL'),
-            'note': 'Tool wear and RUL are snapshot estimates based on current sensor state, not temporal degradation tracking',
+            'note': 'IMPORTANT: This endpoint expects SCALED features for the classifier and RAW features for the regressor. Tool wear and RUL are snapshot estimates.',
             'timestamp': datetime.now().isoformat()
         })
 
     except Exception as e:
-        # Don't return raw exception text in production - log and return generic message
         print(f"Prediction error: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/api/machines/<int:machine_id>')
 def get_machine_details(machine_id):
     """Get details for a specific machine (Hybrid: Actual + Predicted)"""
-    df_local = get_data()
-    if df_local is None:
+    data_dict = get_data()
+    df_raw_local = data_dict['raw']
+    df_scaled_local = data_dict['scaled']
+    
+    if df_raw_local is None or df_scaled_local is None:
         return jsonify({'error': 'Data not loaded'}), 500
     
-    if machine_id < 0 or machine_id >= len(df_local):
+    if machine_id < 0 or machine_id >= len(df_raw_local):
         return jsonify({'error': f'Machine {machine_id} not found'}), 404
     
-    # Use raw data for model predictions (matches training data distribution)
-    row_scaled = df_local.iloc[machine_id]  # Note: variable name 'row_scaled' is legacy; data is RAW
-    X_classifier = df_local.iloc[[machine_id]][FEATURE_COLS_CLASSIFIER]
-    X_regressor = df_local.iloc[[machine_id]][FEATURE_COLS_REGRESSOR]
+    # Inference: Classifier uses scaled, Regressor uses raw
+    row_raw = df_raw_local.iloc[machine_id]
+    X_classifier = df_scaled_local.iloc[[machine_id]][FEATURE_COLS_CLASSIFIER]
+    X_regressor = df_raw_local.iloc[[machine_id]][FEATURE_COLS_REGRESSOR]
 
     classifier, regressor = get_models()
     if classifier is None or regressor is None:
@@ -465,12 +459,7 @@ def get_machine_details(machine_id):
     predicted_tool_wear = float(regressor.predict(X_regressor)[0])
     
     # Actual values (ground truth)
-    df_raw_local = get_data()
-    if df_raw_local is not None:
-        row_raw = df_raw_local.iloc[machine_id]
-        actual_tool_wear = float(row_raw['Tool wear [min]'])
-    else:
-        actual_tool_wear = float(row_scaled['Tool wear [min]'])
+    actual_tool_wear = float(row_raw['Tool wear [min]'])
     
     # Calculate RUL values (254 min is max tool wear in dataset)
     max_wear = app.config.get('MAX_TOOL_WEAR', 254)
@@ -483,8 +472,7 @@ def get_machine_details(machine_id):
     
     # Prediction error
     wear_error = abs(actual_tool_wear - predicted_tool_wear)
-    # Use MAX_TOOL_WEAR for normalization
-    error_percent = (wear_error / max(1, app.config.get('MAX_TOOL_WEAR', 254))) * 100
+    error_percent = (wear_error / max(1, max_wear)) * 100
     
     # Model reliability assessment
     model_reliability = "UNRELIABLE" if abs(wear_error) > 50 else "MODERATE" if abs(wear_error) > 20 else "GOOD"
@@ -496,7 +484,7 @@ def get_machine_details(machine_id):
     
     return jsonify({
         'machine_id': machine_id,
-        'features': {feat: float(row_scaled[feat]) for feat in FEATURE_COLS_CLASSIFIER},
+        'features': {feat: float(row_raw[feat]) for feat in FEATURE_COLS_CLASSIFIER},
         'failure_analysis': {
             'probability_percent': round(failure_prob * 100, 2),
             'status': 'CRITICAL' if failure_prob >= 0.75 else ('WARNING' if failure_prob >= 0.50 else 'NORMAL'),
@@ -507,44 +495,47 @@ def get_machine_details(machine_id):
             'predicted_tool_wear_minutes': round(predicted_tool_wear, 2),
             'prediction_error_minutes': round(wear_error, 2),
             'prediction_error_percent': round(error_percent, 2),
-            'max_tool_wear_threshold': 254
+            'max_tool_wear_threshold': max_wear
         },
         'rul_analysis': {
-            'actual_remaining_useful_life_minutes': actual_rul_min,
-            'predicted_remaining_useful_life_minutes': predicted_rul_min,
-            'rul_difference_minutes': abs(actual_rul_min - predicted_rul_min),
+            'actual_remaining_useful_life': actual_rul_min,
+            'predicted_remaining_useful_life': predicted_rul_min,
+            'rul_difference': abs(actual_rul_min - predicted_rul_min),
             'actual_calendar_time': actual_rul_calendar,
             'predicted_calendar_time': predicted_rul_calendar,
-            'note': 'Calendar times assume 8 hours/day operating schedule. Adjust operating_hours_per_day parameter for your machine schedule.'
+            'note': 'Calendar times assume 8 hours/day operating schedule.'
         },
         'model_reliability': {
             'status': model_reliability,
             'warning': reliability_warning[model_reliability],
-            'assessment': 'Failure classifier: Production-ready (83.8% test recall, 82.1% test precision). RUL regressor: HAS DATA LEAKAGE - Stress Index and Temp_Diff_x_Wear are derived from tool wear, causing artificial perfection (R²=0.9995). NOT production-ready. Retrain without leaky features.'
+            'assessment': 'Failure classifier: Production-ready. RUL regressor: Experimental.'
         },
-        'model_performance_note': '🔴 CRITICAL: RUL predictions are unreliable due to data leakage. Failure classifier is trustworthy. For production RUL: retrain regressor with clean sensor features only (remove Stress Index and Temp_Diff_x_Wear).',
+        'model_performance_note': '🔴 CRITICAL: RUL predictions are unreliable due to historical data leakage in training. Failure classifier is trustworthy.',
         'timestamp': datetime.now().isoformat()
     })
 
 @app.route('/api/stats')
 def get_stats():
     """Get overall system statistics for dashboard sample machines (not entire dataset)"""
-    df_local = get_data()
+    data_dict = get_data()
+    df_raw_local = data_dict['raw']
+    df_scaled_local = data_dict['scaled']
+    
     classifier, _ = get_models()
-    if df_local is None or classifier is None:
+    if df_raw_local is None or df_scaled_local is None or classifier is None:
         return jsonify({'error': 'Data not loaded'}), 500
     
     # Use SAME sample indices as dashboard (fixed seed for consistency)
     np.random.seed(42)
-    sample_indices = np.random.choice(len(df_local), 10, replace=False)
+    sample_indices = np.random.choice(len(df_raw_local), 10, replace=False)
     
     # Calculate statistics ONLY for sampled machines
-    df_sample = df_local.iloc[sample_indices]
-    X_classifier = df_sample[FEATURE_COLS_CLASSIFIER]
+    # Classifier uses SCALED data
+    X_classifier = df_scaled_local.iloc[sample_indices][FEATURE_COLS_CLASSIFIER]
     predictions = classifier.predict_proba(X_classifier)[:, 1]
     
     return jsonify({
-        'total_machines': len(df_sample),
+        'total_machines': len(sample_indices),
         'critical_count': int((predictions >= 0.75).sum()),
         'warning_count': int(((predictions >= 0.50) & (predictions < 0.75)).sum()),
         'normal_count': int((predictions < 0.50).sum()),

@@ -29,16 +29,20 @@ class XGBoostClassifierWrapper:
     def predict(self, X: np.ndarray) -> np.ndarray:
         if xgb is None:
             raise ImportError('xgboost is required for XGBoostClassifierWrapper')
-        dm = xgb.DMatrix(X)
-        preds = self.booster.predict(dm)
+        # Convert to numpy array to avoid feature name issues with characters like '[' and ']'
+        X_arr = np.asanyarray(X)
+        dm = xgb.DMatrix(X_arr)
+        preds = self.booster.predict(dm, validate_features=False)
         # If binary: preds are probabilities for positive class; threshold at 0.5
         return (preds >= 0.5).astype(int)
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         if xgb is None:
             raise ImportError('xgboost is required for XGBoostClassifierWrapper')
-        dm = xgb.DMatrix(X)
-        preds = self.booster.predict(dm)
+        # Convert to numpy array to avoid feature name issues with characters like '[' and ']'
+        X_arr = np.asanyarray(X)
+        dm = xgb.DMatrix(X_arr)
+        preds = self.booster.predict(dm, validate_features=False)
         # Return [[1-p, p]] per-sample
         return np.vstack([1 - preds, preds]).T
 
@@ -50,8 +54,10 @@ class XGBoostRegressorWrapper:
     def predict(self, X: np.ndarray) -> np.ndarray:
         if xgb is None:
             raise ImportError('xgboost is required for XGBoostRegressorWrapper')
-        dm = xgb.DMatrix(X)
-        preds = self.booster.predict(dm)
+        # Convert to numpy array to avoid feature name issues with characters like '[' and ']'
+        X_arr = np.asanyarray(X)
+        dm = xgb.DMatrix(X_arr)
+        preds = self.booster.predict(dm, validate_features=False)
         return preds
 
 

@@ -3,7 +3,7 @@
 
 echo ""
 echo "===================================="
-echo "IndustriSense AI - Web Application"
+echo "IndustriSense AI - Web Application"I
 echo "===================================="
 echo ""
 
