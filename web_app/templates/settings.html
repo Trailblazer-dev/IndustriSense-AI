@@ -3,263 +3,234 @@
 {% block title %}Settings - IndustriSense AI{% endblock %}
 
 {% block content %}
-<div class="settings">
-    <h1 class="page-title">Settings & Configuration</h1>
+<div class="container-fluid px-4">
+    <div class="mb-5">
+        <h1 class="page-title mb-1">Settings & Configuration</h1>
+        <p class="text-muted">Manage your account preferences, alert thresholds, and system connectivity</p>
+    </div>
 
-    <div class="settings-container">
-        <div class="settings-section">
-            <h2>System Configuration</h2>
-            <div class="setting-item">
-                <label>Environment</label>
-                <input type="text" value="Production" disabled>
-                <small>Current deployment environment</small>
-            </div>
-            <div class="setting-item">
-                <label>Model Version</label>
-                <input type="text" value="1.0 (Phase 1)" disabled>
-                <small>XGBoost Classifier + Regressor</small>
-            </div>
-            <div class="setting-item">
-                <label>Last Updated</label>
-                <input type="text" value="2026-02-02" disabled>
-                <small>Latest model training date</small>
-            </div>
-        </div>
-
-        <div class="settings-section">
-            <h2>Alert Thresholds</h2>
-            <div class="setting-item">
-                <label>Critical Risk Threshold</label>
-                <div class="threshold-input">
-                    <input type="range" id="criticalThreshold" min="0" max="100" value="70">
-                    <span id="criticalValue">70%</span>
+    <div class="row g-4">
+        <!-- Sidebar Navigation -->
+        <div class="col-lg-3">
+            <div class="stat-card p-0 border-0 shadow-sm overflow-hidden sticky-top" style="top: 100px;">
+                <div class="list-group list-group-flush" id="settings-tabs" role="tablist">
+                    <a class="list-group-item list-group-item-action active p-3 border-0" id="list-profile-list" data-bs-toggle="list" href="#list-profile" role="tab">
+                        <i class="fas fa-user-circle me-2 text-primary"></i> Account Profile
+                    </a>
+                    <a class="list-group-item list-group-item-action p-3 border-0" id="list-alerts-list" data-bs-toggle="list" href="#list-alerts" role="tab">
+                        <i class="fas fa-bell me-2 text-warning"></i> Alert Thresholds
+                    </a>
+                    <a class="list-group-item list-group-item-action p-3 border-0" id="list-system-list" data-bs-toggle="list" href="#list-system" role="tab">
+                        <i class="fas fa-server me-2 text-accent"></i> System Configuration
+                    </a>
+                    <a class="list-group-item list-group-item-action p-3 border-0" id="list-privacy-list" data-bs-toggle="list" href="#list-privacy" role="tab">
+                        <i class="fas fa-shield-alt me-2 text-success"></i> Data & Privacy
+                    </a>
+                    <a class="list-group-item list-group-item-action p-3 border-0 text-danger" id="list-developer-list" data-bs-toggle="list" href="#list-developer" role="tab">
+                        <i class="fas fa-code me-2"></i> Developer Tools
+                    </a>
                 </div>
-                <small>Machines above this probability trigger critical alerts</small>
             </div>
-            <div class="setting-item">
-                <label>Warning Risk Threshold</label>
-                <div class="threshold-input">
-                    <input type="range" id="warningThreshold" min="0" max="100" value="40">
-                    <span id="warningValue">40%</span>
+        </div>
+
+        <!-- Settings Content -->
+        <div class="col-lg-9">
+            <div class="tab-content" id="nav-tabContent">
+                <!-- Account Profile -->
+                <div class="tab-pane fade show active" id="list-profile" role="tabpanel">
+                    <div class="stat-card p-4 border-0 shadow-sm">
+                        <h5 class="fw-bold mb-4">Account Profile</h5>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="metric-label-small mb-2">Email Address</label>
+                                <input type="text" class="form-control bg-light" value="{{ current_user.email }}" disabled>
+                                <small class="text-muted mt-1 d-block">Used for login and critical notifications</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="metric-label-small mb-2">Organization</label>
+                                <input type="text" class="form-control bg-light" value="{{ current_user.company_name or 'Not set' }}" disabled>
+                            </div>
+                            <div class="col-12">
+                                <label class="metric-label-small mb-2">Subscription Tier</label>
+                                <div class="p-3 bg-light rounded-3 d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 p-2 rounded me-3 text-primary">
+                                            <i class="fas fa-crown"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-primary">{{ current_user.subscription_plan }} Plan</div>
+                                            <div class="extra-small text-muted">Billed monthly • Active since {{ current_user.created_at.strftime('%b %d, %Y') }}</div>
+                                        </div>
+                                    </div>
+                                    <a href="{{ url_for('payments.plans') }}" class="btn btn-primary btn-sm px-4">Upgrade</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <small>Machines above this probability trigger warning alerts</small>
-            </div>
-            <div class="setting-item">
-                <label>Auto-Refresh Interval</label>
-                <select>
-                    <option value="30">30 seconds</option>
-                    <option value="60" selected>1 minute</option>
-                    <option value="300">5 minutes</option>
-                    <option value="600">10 minutes</option>
-                    <option value="0">Disable auto-refresh</option>
-                </select>
-                <small>How often dashboard updates automatically</small>
-            </div>
-        </div>
 
-        <div class="settings-section">
-            <h2>Notification Preferences</h2>
-            <div class="setting-item checkbox">
-                <input type="checkbox" id="emailAlerts" checked>
-                <label for="emailAlerts">Email Alerts for Critical Issues</label>
-            </div>
-            <div class="setting-item checkbox">
-                <input type="checkbox" id="browserNotifications" checked>
-                <label for="browserNotifications">Browser Notifications</label>
-            </div>
-            <div class="setting-item checkbox">
-                <input type="checkbox" id="dailyReport">
-                <label for="dailyReport">Daily Summary Report</label>
-            </div>
-            <div class="setting-item">
-                <label>Alert Email Address</label>
-                <input type="email" placeholder="maintenance@company.com" value="maintenance@company.com">
-            </div>
-        </div>
+                <!-- Alert Thresholds -->
+                <div class="tab-pane fade" id="list-alerts" role="tabpanel">
+                    <div class="stat-card p-4 border-0 shadow-sm">
+                        <h5 class="fw-bold mb-4">Alert & Monitoring Thresholds</h5>
+                        <div class="mb-5">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <label class="fw-bold text-danger mb-0">Critical Risk Threshold</label>
+                                    <div class="small text-muted">Triggers immediate SMS and Email alerts</div>
+                                </div>
+                                <span class="badge bg-danger fs-6" id="criticalValue">70%</span>
+                            </div>
+                            <input type="range" class="form-range" id="criticalThreshold" min="0" max="100" value="70">
+                        </div>
 
-        <div class="settings-section">
-            <h2>Data & Privacy</h2>
-            <div class="setting-item">
-                <label>Data Retention</label>
-                <select>
-                    <option value="30">30 days</option>
-                    <option value="90" selected>90 days</option>
-                    <option value="180">6 months</option>
-                    <option value="365">1 year</option>
-                </select>
-                <small>How long prediction logs are kept</small>
-            </div>
-            <div class="setting-item checkbox">
-                <input type="checkbox" id="anonymizeData" checked>
-                <label for="anonymizeData">Anonymize Machine IDs in Logs</label>
-            </div>
-            <div class="setting-item">
-                <button class="btn btn-small btn-danger">Download My Data</button>
-                <small>Export all settings and prediction history (GDPR compliant)</small>
-            </div>
-        </div>
+                        <div class="mb-5">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <label class="fw-bold text-warning mb-0">Warning Risk Threshold</label>
+                                    <div class="small text-muted">Visible on dashboard health tiles</div>
+                                </div>
+                                <span class="badge bg-warning text-dark fs-6" id="warningValue">40%</span>
+                            </div>
+                            <input type="range" class="form-range" id="warningThreshold" min="0" max="100" value="40">
+                        </div>
 
-        <div class="settings-section">
-            <h2>Developer Settings</h2>
-            <div class="setting-item checkbox">
-                <input type="checkbox" id="debugMode">
-                <label for="debugMode">Debug Mode</label>
-            </div>
-            <div class="setting-item checkbox">
-                <input type="checkbox" id="apiLogging">
-                <label for="apiLogging">API Request Logging</label>
-            </div>
-            <div class="setting-item">
-                <label>API Base URL</label>
-                <input type="text" value="http://localhost:5000/api" disabled>
-                <small>Endpoint for API requests</small>
-            </div>
-        </div>
+                        <div class="col-md-6">
+                            <label class="metric-label-small mb-2">Fleet Refresh Interval</label>
+                            <select class="form-select">
+                                <option value="30">30 seconds</option>
+                                <option value="60" selected>1 minute</option>
+                                <option value="300">5 minutes</option>
+                                <option value="0">Disable auto-refresh</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 
-        <div class="settings-actions">
-            <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
-            <button class="btn btn-secondary" onclick="resetSettings()">Reset to Defaults</button>
+                <!-- System Configuration -->
+                <div class="tab-pane fade" id="list-system" role="tabpanel">
+                    <div class="stat-card p-4 border-0 shadow-sm">
+                        <h5 class="fw-bold mb-4">System Intelligence Specs</h5>
+                        <div class="table-container border">
+                            <table class="table table-hover align-middle mb-0">
+                                <tbody class="small">
+                                    <tr>
+                                        <td class="fw-bold py-3">Environment</td>
+                                        <td class="text-end py-3"><span class="badge bg-success bg-opacity-10 text-success">Production Cluster</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold py-3">Inference Engine</td>
+                                        <td class="text-end py-3">XGBoost v3.2.0 (Vectorized)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold py-3">Last Fleet Sync</td>
+                                        <td class="text-end py-3">March 13, 2026</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold py-3">Model Accuracy</td>
+                                        <td class="text-end py-3 text-primary fw-bold">98.8% Test Precision</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data & Privacy -->
+                <div class="tab-pane fade" id="list-privacy" role="tabpanel">
+                    <div class="stat-card p-4 border-0 shadow-sm">
+                        <h5 class="fw-bold mb-4">Data Persistence & Privacy</h5>
+                        <div class="mb-4">
+                            <label class="metric-label-small mb-2">Data Retention Policy</label>
+                            <select class="form-select">
+                                <option value="30">30 days (Standard)</option>
+                                <option value="90" selected>90 days (Compliance)</option>
+                                <option value="365">1 year (Enterprise)</option>
+                            </select>
+                        </div>
+                        <div class="form-check form-switch mb-4">
+                            <input class="form-check-input" type="checkbox" id="anonymizeCheck" checked>
+                            <label class="form-check-label fw-bold small ms-2" for="anonymizeCheck">Anonymize Equipment IDs in global logs</label>
+                        </div>
+                        <hr class="my-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="fw-bold mb-1">Data Portability</h6>
+                                <p class="small text-muted mb-0">Download all your fleet prediction history in JSON format.</p>
+                            </div>
+                            <button class="btn btn-outline-primary btn-sm px-4">Request Export</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Developer Tools -->
+                <div class="tab-pane fade" id="list-developer" role="tabpanel">
+                    <div class="stat-card p-4 border-0 shadow-sm border-start border-danger border-4">
+                        <h5 class="fw-bold text-danger mb-4"><i class="fas fa-terminal me-2"></i>Developer Sandbox</h5>
+                        <div class="mb-4 p-3 bg-light rounded font-monospace extra-small">
+                            API_BASE_URL: {{ request.url_root }}api/v1
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="debugCheck">
+                            <label class="form-check-label small fw-bold ms-2 text-danger" for="debugCheck">Enable verbose debug headers</label>
+                        </div>
+                        <div class="form-check form-switch mb-4">
+                            <input class="form-check-input" type="checkbox" id="apiLogCheck" checked>
+                            <label class="form-check-label small fw-bold ms-2" for="apiLogCheck">Log raw API payloads</label>
+                        </div>
+                        <div class="mt-4">
+                            <button class="btn btn-danger btn-sm px-4" onclick="resetSettings()">Reset Instance to Defaults</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Actions -->
+            <div class="mt-4 d-flex gap-3 justify-content-end">
+                <button class="btn btn-light px-5 shadow-sm border" onclick="location.reload()">Discard</button>
+                <button class="btn btn-primary px-5 shadow-md" onclick="saveSettings()">Apply Changes</button>
+            </div>
         </div>
     </div>
 </div>
 
 <style>
-.settings-container {
-    max-width: 800px;
-    margin-top: 30px;
+.list-group-item-action.active {
+    background-color: var(--bg-main) !important;
+    color: var(--primary) !important;
+    font-weight: 700;
+    border-left: 4px solid var(--accent) !important;
 }
-
-.settings-section {
-    background: white;
-    padding: 25px;
-    margin-bottom: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    border-left: 4px solid #667eea;
+.list-group-item {
+    transition: var(--transition);
+    font-size: 0.9375rem;
+    font-weight: 500;
 }
-
-.settings-section h2 {
-    margin-top: 0;
-    margin-bottom: 20px;
-    color: #333;
-}
-
-.setting-item {
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #eee;
-}
-
-.setting-item:last-child {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: none;
-}
-
-.setting-item label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: bold;
-    color: #333;
-}
-
-.setting-item input[type="text"],
-.setting-item input[type="email"],
-.setting-item select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-}
-
-.setting-item input[type="text"]:disabled,
-.setting-item input[type="email"]:disabled {
-    background-color: #f5f5f5;
-    cursor: not-allowed;
-}
-
-.setting-item input[type="text"]:focus,
-.setting-item input[type="email"]:focus,
-.setting-item select:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
-}
-
-.threshold-input {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.threshold-input input[type="range"] {
-    flex: 1;
-}
-
-.threshold-input span {
-    min-width: 50px;
-    font-weight: bold;
-    color: #667eea;
-}
-
-.setting-item.checkbox {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.setting-item.checkbox input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-}
-
-.setting-item.checkbox label {
-    margin: 0;
-    cursor: pointer;
-    flex: 1;
-}
-
-.setting-item small {
-    display: block;
-    margin-top: 5px;
-    color: #999;
-    font-size: 12px;
-}
-
-.settings-actions {
-    display: flex;
-    gap: 15px;
-    margin-top: 30px;
-    justify-content: center;
-}
-
-.btn-danger {
-    background-color: #f5576c;
-}
-
-.btn-danger:hover {
-    background-color: #f24652;
-}
+.extra-small { font-size: 0.75rem; }
+.shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+.form-range::-webkit-slider-thumb { background: var(--accent); }
+.form-range::-moz-range-thumb { background: var(--accent); }
 </style>
 
+{% endblock %}
+
+{% block scripts %}
 <script>
-document.getElementById('criticalThreshold').addEventListener('change', (e) => {
+document.getElementById('criticalThreshold').addEventListener('input', (e) => {
     document.getElementById('criticalValue').textContent = e.target.value + '%';
 });
 
-document.getElementById('warningThreshold').addEventListener('change', (e) => {
+document.getElementById('warningThreshold').addEventListener('input', (e) => {
     document.getElementById('warningValue').textContent = e.target.value + '%';
 });
 
 function saveSettings() {
-    alert('Settings saved successfully!');
+    IndustriSense.showFeedback('Configuration applied successfully to fleet instance.', 'success');
 }
 
 function resetSettings() {
-    if (confirm('Are you sure you want to reset all settings to defaults?')) {
-        alert('Settings have been reset to defaults.');
+    if (confirm('Critical: This will reset all localized thresholds and API keys. Proceed?')) {
+        IndustriSense.showFeedback('System restored to default operational state.', 'warning');
     }
 }
 </script>

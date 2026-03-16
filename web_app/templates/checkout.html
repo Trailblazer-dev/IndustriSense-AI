@@ -95,8 +95,8 @@
                         <div class="form-group">
                             <label for="email" class="form-label">Email Address</label>
                             <input type="email" class="form-control" id="email" name="email" 
-                                   placeholder="john@example.com" required>
-                            <small class="form-help">We'll send your receipt and setup instructions here</small>
+                                   value="{{ current_user.email }}" readonly required>
+                            <small class="form-help">Your receipt and setup instructions will be sent here</small>
                         </div>
 
                         <div class="form-group">
@@ -117,7 +117,7 @@
                         <div class="form-group">
                             <label for="company" class="form-label">Company Name</label>
                             <input type="text" class="form-control" id="company" name="company" 
-                                   placeholder="Your Company Ltd">
+                                   value="{{ current_user.company_name or '' }}" placeholder="Your Company Ltd">
                         </div>
 
                         <div class="form-row">
@@ -607,6 +607,7 @@ async function processPayment(event) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
             },
             body: JSON.stringify(payload)
         });

@@ -69,21 +69,19 @@ See [PAYHERO_SETUP_GUIDE.md](PAYHERO_SETUP_GUIDE.md) for detailed PayHero config
 
 **Windows:**
 ```powershell
-.\run.bat
+python run.py
 ```
 
 **macOS/Linux:**
 ```bash
-bash run.sh
+python3 run.py
 ```
 
-**Manual:**
+Application runs at: `http://localhost:5000`
+
+### 5. Production Deployment
 ```bash
-python app.py
-```
-
-Application runs at: `http://localhost:5000`# Run Flask app
-python app.py
+gunicorn -w 4 -b 0.0.0.0:5000 wsgi:app
 ```
 
 ### 4. Access Application

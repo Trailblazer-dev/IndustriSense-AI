@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}IndustriSense AI - Intelligent Predictive Maintenance{% endblock %}
+
+{% block content %}
+<div class="landing-page">
+    <!-- Hero Section -->
+    <header class="hero-section text-center py-5 mb-5 bg-primary text-white position-relative overflow-hidden">
+        <div class="container position-relative" style="z-index: 2;">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <span class="badge bg-accent px-3 py-2 mb-3 shadow-sm">AI-POWERED FLEET MONITORING</span>
+                    <h1 class="display-3 fw-800 mb-4 tracking-tight">
+                        Reduce Unplanned Downtime by up to 
+                        <span class="d-inline-block px-3 py-1 bg-accent rounded-3 text-white shadow-sm transition-hover">35%</span>
+                    </h1>
+                    <p class="lead mb-5 opacity-75 mx-auto" style="max-width: 800px;">
+                        IndustriSense AI uses advanced gradient boosting to predict machine failures before they happen, giving your maintenance team the edge they need.
+                    </p>
+                    <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-accent btn-lg px-5 py-3 shadow">
+                            Start Free Trial <i class="fas fa-arrow-right ms-2"></i>
+                        </a>
+                        <a href="{{ url_for('main.models_page') }}" class="btn btn-outline-light btn-lg px-5 py-3">
+                            View Model Specs
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Decorative background -->
+        <div class="position-absolute top-50 start-50 translate-middle opacity-05" style="font-size: 25rem; pointer-events: none; transform: translate(-50%, -50%) rotate(-10deg) !important;">
+            <i class="fas fa-chart-line"></i>
+        </div>
+    </header>
+
+    <div class="container py-5">
+        <!-- Feature Grid -->
+        <div class="row g-4 text-center mb-5">
+            <div class="col-md-4">
+                <div class="stat-card p-4 h-100 border-0 shadow-sm">
+                    <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-circle d-inline-block mb-3">
+                        <i class="fas fa-bolt fs-3"></i>
+                    </div>
+                    <h4 class="fw-bold">Real-time Risk</h4>
+                    <p class="text-muted small">Live failure probability scores for every machine in your fleet using verified sensor telemetry.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card p-4 h-100 border-0 shadow-sm">
+                    <div class="bg-accent bg-opacity-10 text-accent p-3 rounded-circle d-inline-block mb-3">
+                        <i class="fas fa-hourglass-half fs-3"></i>
+                    </div>
+                    <h4 class="fw-bold">RUL Forecasting</h4>
+                    <p class="text-muted small">Accurate Remaining Useful Life (RUL) estimates help you schedule maintenance during planned shifts.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card p-4 h-100 border-0 shadow-sm">
+                    <div class="bg-success bg-opacity-10 text-success p-3 rounded-circle d-inline-block mb-3">
+                        <i class="fas fa-shield-check fs-3"></i>
+                    </div>
+                    <h4 class="fw-bold">Explainable AI</h4>
+                    <p class="text-muted small">Transparency reports show exactly why a machine is at risk, including feature impact and variance.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trusted Technology -->
+        <div class="row align-items-center py-5">
+            <div class="col-lg-6 mb-5 mb-lg-0">
+                <h2 class="fw-800 mb-4 section-title-large">Enterprise Grade Intelligence</h2>
+                <p class="text-muted lead-sm">Our dual-model architecture processes complex operational signals—temperature differentials, torque interactions, and speed variance—to deliver high-recall failure alerts.</p>
+                <ul class="list-unstyled d-grid gap-3 mt-4">
+                    <li class="d-flex align-items-center p-3 bg-white rounded-3 shadow-sm border-start border-accent border-4">
+                        <i class="fas fa-check-circle text-accent me-3 fs-5"></i>
+                        <span class="fw-600">High-recall XGBoost Binary Classifiers</span>
+                    </li>
+                    <li class="d-flex align-items-center p-3 bg-white rounded-3 shadow-sm border-start border-accent border-4">
+                        <i class="fas fa-check-circle text-accent me-3 fs-5"></i>
+                        <span class="fw-600">Sanitized, data-leakage-free RUL Regressors</span>
+                    </li>
+                    <li class="d-flex align-items-center p-3 bg-white rounded-3 shadow-sm border-start border-accent border-4">
+                        <i class="fas fa-check-circle text-accent me-3 fs-5"></i>
+                        <span class="fw-600">RESTful API for direct equipment integration</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-lg-6 ps-lg-5">
+                <div class="position-relative">
+                    <div class="bg-accent bg-opacity-10 position-absolute top-0 start-0 w-100 h-100 rounded-4 translate-middle-x translate-middle-y ms-4 mt-4" style="z-index: -1;"></div>
+                    <div class="image-container rounded-4 shadow-lg border overflow-hidden" style="min-height: 400px; background: url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1200') center/cover no-repeat;">
+                        <div class="h-100 w-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-10">
+                            <i class="fas fa-industry fs-1 text-white opacity-25"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final CTA -->
+    <section class="py-5 bg-light border-top">
+        <div class="container text-center py-4">
+            <h2 class="fw-bold mb-4">Ready to optimize your operations?</h2>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="{{ url_for('payments.plans') }}" class="btn btn-primary btn-lg px-5">View Pricing</a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary btn-lg px-5">Create Account</a>
+            </div>
+        </div>
+    </section>
+</div>
+
+<style>
+.btn-accent { background-color: var(--accent); border-color: var(--accent); color: white; }
+.btn-accent:hover { background-color: var(--accent-hover); border-color: var(--accent-hover); color: white; }
+.text-accent { color: var(--accent) !important; }
+.tracking-tight { letter-spacing: -0.05em; }
+.fw-800 { font-weight: 800; }
+.section-title-large { font-size: 2.5rem; }
+.lead-sm { font-size: 1.1rem; }
+.fw-600 { font-weight: 600; }
+.transition-hover { transition: transform 0.2s; }
+.transition-hover:hover { transform: scale(1.05); }
+</style>
+{% endblock %}

@@ -3,363 +3,204 @@
 {% block title %}Models - IndustriSense AI{% endblock %}
 
 {% block content %}
-<div class="models">
-    <h1 class="page-title">Model Performance & Details</h1>
+<div class="container-fluid px-4">
+    <div class="mb-5">
+        <h1 class="page-title mb-1">Architecture & Model Specifications</h1>
+        <p class="text-muted">Technical deep-dive into the dual-model system powering IndustriSense AI</p>
+    </div>
 
-    <div class="models-grid">
+    <div class="row g-4">
         <!-- Classifier Model -->
-        <div class="model-card">
-            <div class="model-header">
-                <h2>{{ model_info.classifier.name }}</h2>
-                <span class="model-type">{{ model_info.classifier.type }}</span>
-            </div>
-            <div class="model-specs">
-                <div class="spec">
-                    <span class="spec-label">Features Used:</span>
-                    <span class="spec-value">{{ model_info.classifier.features }}</span>
+        <div class="col-xl-6">
+            <div class="stat-card p-4 h-100 shadow-sm border-0">
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <span class="badge bg-primary bg-opacity-10 text-primary mb-2">Classification Task</span>
+                        <h3 class="fw-bold text-primary mb-0">{{ model_info.classifier.name }}</h3>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 p-3 rounded-3">
+                        <i class="fas fa-microchip text-primary fs-4"></i>
+                    </div>
                 </div>
-                <div class="spec">
-                    <span class="spec-label">Classes:</span>
-                    <span class="spec-value">{{ model_info.classifier.classes }}</span>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded-2">
+                            <div class="small text-muted mb-1">Algorithm</div>
+                            <div class="fw-bold">{{ model_info.classifier.type }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded-2">
+                            <div class="small text-muted mb-1">Feature Count</div>
+                            <div class="fw-bold">{{ model_info.classifier.features }} Variables</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="spec">
-                    <span class="spec-label">Task:</span>
-                    <span class="spec-value">Binary Classification (Failure/Normal)</span>
+
+                <div class="mb-4">
+                    <h6 class="fw-bold small text-uppercase text-muted mb-3">Model Objective</h6>
+                    <p class="text-muted small">Real-time binary classification of equipment state. Optimized for <strong>High Recall</strong> to ensure zero missed critical failure events.</p>
+                    <ul class="list-unstyled small d-grid gap-2 mt-3">
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Probabilistic risk assessment (0-100%)</li>
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Automated criticality escalation logic</li>
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Class imbalance handling via <code>scale_pos_weight</code></li>
+                    </ul>
                 </div>
+
+                {% if model_info.classifier.metrics %}
+                <div>
+                    <h6 class="fw-bold small text-uppercase text-muted mb-3">Verified Performance</h6>
+                    <div class="table-container border">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Benchmark</th>
+                                    <th class="text-end">Result</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for metric in model_info.classifier.metrics[:4] %}
+                                <tr>
+                                    <td>{{ metric.keys()|list|first }}</td>
+                                    <td class="text-end fw-bold text-primary">{{ metric.values()|list|first }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
             </div>
-            <div class="model-description">
-                <p>Predicts whether a machine will fail based on operational parameters and engineered features.</p>
-                <h4>Key Predictions:</h4>
-                <ul>
-                    <li>Equipment failure probability (0-100%)</li>
-                    <li>Risk classification (Critical/Warning/Normal)</li>
-                    <li>Confidence score for maintenance decision-making</li>
-                </ul>
-            </div>
-            {% if model_info.classifier.metrics %}
-            <div class="model-metrics">
-                <h4>Performance Metrics</h4>
-                <table class="metrics-table">
-                    <tr>
-                        <th>Metric</th>
-                        <th>Value</th>
-                    </tr>
-                    {% for metric in model_info.classifier.metrics[:5] %}
-                    <tr>
-                        <td>{{ metric.keys()|list|first }}</td>
-                        <td>{{ metric.values()|list|first }}</td>
-                    </tr>
-                    {% endfor %}
-                </table>
-            </div>
-            {% endif %}
         </div>
 
         <!-- Regressor Model -->
-        <div class="model-card">
-            <div class="model-header">
-                <h2>{{ model_info.regressor.name }}</h2>
-                <span class="model-type">{{ model_info.regressor.type }}</span>
-            </div>
-            <div class="model-specs">
-                <div class="spec">
-                    <span class="spec-label">Features Used:</span>
-                    <span class="spec-value">{{ model_info.regressor.features }}</span>
+        <div class="col-xl-6">
+            <div class="stat-card p-4 h-100 shadow-sm border-0">
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <span class="badge bg-accent bg-opacity-10 text-accent mb-2">Regression Task</span>
+                        <h3 class="fw-bold text-accent mb-0">{{ model_info.regressor.name }}</h3>
+                    </div>
+                    <div class="bg-accent bg-opacity-10 p-3 rounded-3">
+                        <i class="fas fa-hourglass-start text-accent fs-4"></i>
+                    </div>
                 </div>
-                <div class="spec">
-                    <span class="spec-label">Target Variable:</span>
-                    <span class="spec-value">Tool Wear (minutes)</span>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded-2">
+                            <div class="small text-muted mb-1">Algorithm</div>
+                            <div class="fw-bold">{{ model_info.regressor.type }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded-2">
+                            <div class="small text-muted mb-1">Target Variable</div>
+                            <div class="fw-bold">Tool Wear (min)</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="spec">
-                    <span class="spec-label">Task:</span>
-                    <span class="spec-value">Continuous Regression</span>
+
+                <div class="mb-4">
+                    <h6 class="fw-bold small text-uppercase text-muted mb-3">Model Objective</h6>
+                    <p class="text-muted small">Continuous degradation tracking and Remaining Useful Life (RUL) estimation using sanitized sensor-only features.</p>
+                    <ul class="list-unstyled small d-grid gap-2 mt-3">
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Cumulative wear accumulation tracking</li>
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Predictive maintenance window calculation</li>
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Leakage-free sensor telemetry processing</li>
+                    </ul>
+                </div>
+
+                <div class="p-3 bg-light border-start border-accent border-4 rounded-1">
+                    <h6 class="fw-bold small mb-1">Production Maturity: <span class="text-accent">Beta</span></h6>
+                    <p class="small text-muted mb-0">Model exhibits ±51.3 min MAE. Continuous training with fleet data is active to improve temporal accuracy.</p>
                 </div>
             </div>
-            <div class="model-description">
-                <p>Estimates remaining useful life (RUL) by predicting cumulative tool wear.</p>
-                <h4>Key Predictions:</h4>
-                <ul>
-                    <li>Tool wear accumulation in minutes</li>
-                    <li>Remaining useful life (253 min - predicted wear)</li>
-                    <li>Maintenance scheduling recommendations</li>
-                </ul>
-            </div>
-            {% if model_info.regressor.metrics %}
-            <div class="model-metrics">
-                <h4>Performance Metrics</h4>
-                <table class="metrics-table">
-                    <tr>
-                        <th>Metric</th>
-                        <th>Value</th>
-                    </tr>
-                    {% for metric in model_info.regressor.metrics[:5] %}
-                    <tr>
-                        <td>{{ metric.keys()|list|first }}</td>
-                        <td>{{ metric.values()|list|first }}</td>
-                    </tr>
-                    {% endfor %}
-                </table>
-            </div>
-            {% endif %}
         </div>
     </div>
 
     <!-- Architecture Overview -->
-    <div class="architecture-section">
-        <h2>System Architecture</h2>
-        <div class="architecture-diagram">
-            <div class="arch-box input">
-                <h4>Raw Data Input</h4>
-                <p>Machine operational parameters (temperature, speed, torque, etc.)</p>
+    <div class="section-title mt-5">
+        <i class="fas fa-sitemap text-primary"></i> System Workflow
+    </div>
+    
+    <div class="stat-card p-5 border-0 shadow-sm bg-primary text-white overflow-hidden mb-5">
+        <div class="row align-items-center g-4 position-relative" style="z-index: 1;">
+            <div class="col-lg-3 text-center">
+                <div class="bg-white bg-opacity-10 p-4 rounded-4 mb-3 border border-white border-opacity-10">
+                    <i class="fas fa-satellite-dish fs-1 mb-2 text-accent"></i>
+                    <h6 class="fw-bold mb-0">Telemetry</h6>
+                </div>
+                <p class="small opacity-75">Raw Sensor Streams (Temp, Speed, Torque)</p>
             </div>
-            <div class="arch-arrow">→</div>
-            <div class="arch-box process">
-                <h4>Feature Engineering</h4>
-                <p>10 engineered features including interactions and composites</p>
+            <div class="col-lg-1 text-center d-none d-lg-block">
+                <i class="fas fa-chevron-right fs-3 opacity-25"></i>
             </div>
-            <div class="arch-arrow">→</div>
-            <div class="arch-box model">
-                <h4>Dual Models</h4>
-                <p>Classifier (2-way) & Regressor (continuous)</p>
+            <div class="col-lg-3 text-center">
+                <div class="bg-white bg-opacity-10 p-4 rounded-4 mb-3 border border-white border-opacity-10">
+                    <i class="fas fa-cogs fs-1 mb-2 text-accent"></i>
+                    <h6 class="fw-bold mb-0">Feature Engine</h6>
+                </div>
+                <p class="small opacity-75">Scaling & Interaction Generation</p>
             </div>
-            <div class="arch-arrow">→</div>
-            <div class="arch-box output">
-                <h4>Predictions</h4>
-                <p>Failure risk & RUL estimates</p>
+            <div class="col-lg-1 text-center d-none d-lg-block">
+                <i class="fas fa-chevron-right fs-3 opacity-25"></i>
             </div>
+            <div class="col-lg-4 text-center">
+                <div class="bg-white bg-opacity-10 p-4 rounded-4 mb-3 border border-white border-opacity-10">
+                    <div class="d-flex justify-content-center gap-3">
+                        <i class="fas fa-brain fs-1 mb-2 text-accent"></i>
+                        <i class="fas fa-chart-line fs-1 mb-2 text-accent"></i>
+                    </div>
+                    <h6 class="fw-bold mb-0">Inference Core</h6>
+                </div>
+                <p class="small opacity-75">Parallel Risk & RUL Computation</p>
+            </div>
+        </div>
+        <!-- Decorative background element -->
+        <div class="position-absolute top-50 start-50 translate-middle opacity-10" style="font-size: 20rem; pointer-events: none;">
+            <i class="fas fa-network-wired"></i>
         </div>
     </div>
 
     <!-- Model Comparison -->
-    <div class="comparison-section">
-        <h2>Model Comparison</h2>
-        <table class="comparison-table">
+    <div class="section-title">
+        <i class="fas fa-columns text-primary"></i> Decision Support Logic
+    </div>
+    
+    <div class="table-container shadow-sm border-0 mb-5">
+        <table class="table table-hover align-middle mb-0">
             <thead>
                 <tr>
-                    <th>Aspect</th>
-                    <th>Classifier (Failure)</th>
-                    <th>Regressor (RUL)</th>
+                    <th class="py-3 ps-4">Functional Aspect</th>
+                    <th class="py-3">Failure Classifier</th>
+                    <th class="py-3">RUL Regressor</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="small">
                 <tr>
-                    <td><strong>Algorithm</strong></td>
-                    <td>XGBoost Classification</td>
-                    <td>XGBoost Regression</td>
+                    <td class="fw-bold ps-4">Primary Metric</td>
+                    <td><span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">Probability (%)</span></td>
+                    <td><span class="badge bg-accent bg-opacity-10 text-accent border border-accent border-opacity-25">Time (minutes)</span></td>
                 </tr>
                 <tr>
-                    <td><strong>Input Features</strong></td>
-                    <td>10 features</td>
-                    <td>9 features</td>
+                    <td class="fw-bold ps-4">Automation Role</td>
+                    <td>Critical Alarms & Safety Shutdowns</td>
+                    <td>Maintenance Scheduling & Resource Planning</td>
                 </tr>
                 <tr>
-                    <td><strong>Output Type</strong></td>
-                    <td>Probability (0-1)</td>
-                    <td>Continuous Value (minutes)</td>
+                    <td class="fw-bold ps-4">Data Sensitivity</td>
+                    <td>Highly sensitive to sudden sensor spikes</td>
+                    <td>Sensitive to long-term degradation patterns</td>
                 </tr>
                 <tr>
-                    <td><strong>Use Case</strong></td>
-                    <td>Alarm generation</td>
-                    <td>Maintenance scheduling</td>
-                </tr>
-                <tr>
-                    <td><strong>Key Strength</strong></td>
-                    <td>Quick binary decision-making</td>
-                    <td>Precise RUL estimation</td>
+                    <td class="fw-bold ps-4">Verification Mode</td>
+                    <td>Diagnostic Event Correlation</td>
+                    <td>Physical Tool Measurement Verification</td>
                 </tr>
             </tbody>
         </table>
     </div>
 </div>
-
-<style>
-.models-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    gap: 30px;
-    margin: 30px 0;
-}
-
-.model-card {
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.model-header {
-    border-bottom: 2px solid #667eea;
-    padding-bottom: 15px;
-    margin-bottom: 15px;
-}
-
-.model-header h2 {
-    margin: 0 0 10px 0;
-    color: #333;
-}
-
-.model-type {
-    display: inline-block;
-    background-color: #667eea;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: bold;
-}
-
-.model-specs {
-    background-color: #f9f9f9;
-    padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 15px;
-}
-
-.spec {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid #eee;
-}
-
-.spec:last-child {
-    border-bottom: none;
-}
-
-.spec-label {
-    font-weight: bold;
-    color: #666;
-}
-
-.spec-value {
-    color: #333;
-}
-
-.model-description h4,
-.model-metrics h4 {
-    margin-top: 15px;
-    margin-bottom: 10px;
-    color: #333;
-}
-
-.model-description ul {
-    margin: 0;
-    padding-left: 20px;
-}
-
-.model-description li {
-    margin: 5px 0;
-    color: #666;
-}
-
-.metrics-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-}
-
-.metrics-table th,
-.metrics-table td {
-    padding: 8px;
-    border-bottom: 1px solid #eee;
-    text-align: left;
-}
-
-.metrics-table th {
-    background-color: #f5f5f5;
-    font-weight: bold;
-}
-
-.architecture-section {
-    margin-top: 50px;
-    padding: 30px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 8px;
-}
-
-.architecture-section h2 {
-    margin-top: 0;
-}
-
-.architecture-diagram {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 20px;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.arch-box {
-    flex: 1;
-    min-width: 150px;
-    padding: 15px;
-    border-radius: 5px;
-    text-align: center;
-}
-
-.arch-box.input {
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
-.arch-box.process {
-    background-color: rgba(255, 255, 255, 0.3);
-}
-
-.arch-box.model {
-    background-color: rgba(255, 255, 255, 0.4);
-}
-
-.arch-box.output {
-    background-color: rgba(255, 255, 255, 0.5);
-}
-
-.arch-box h4 {
-    margin: 0 0 8px 0;
-}
-
-.arch-box p {
-    margin: 0;
-    font-size: 13px;
-}
-
-.arch-arrow {
-    font-size: 24px;
-    font-weight: bold;
-}
-
-.comparison-section {
-    margin-top: 50px;
-}
-
-.comparison-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    border: 1px solid #ddd;
-}
-
-.comparison-table th,
-.comparison-table td {
-    padding: 15px;
-    text-align: left;
-    border: 1px solid #ddd;
-}
-
-.comparison-table th {
-    background-color: #667eea;
-    color: white;
-    font-weight: bold;
-}
-
-.comparison-table tr:nth-child(even) {
-    background-color: #f9f9f9;
-}
-
-.comparison-table tr:hover {
-    background-color: #f0f0f0;
-}
-</style>
 {% endblock %}

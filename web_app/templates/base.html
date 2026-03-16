@@ -3,78 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}IndustriSense AI - Predictive Maintenance{% endblock %}</title>
+    <title>{% block title %}IndustriSense AI - Intelligent Maintenance{% endblock %}</title>
     
-    <!-- Bootstrap CSS -->
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
+    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom CSS -->
+    <!-- Google Fonts: Inter -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand fw-bold" href="/">
-                <i class="fas fa-industry me-2"></i>
-                <span>IndustriSense AI</span>
+    <!-- Premium Navigation -->
+    <nav class="navbar navbar-expand-xl navbar-dark sticky-top">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
+                <i class="fas fa-microchip"></i>
+                <span>IndustriSense <span class="text-accent">AI</span></span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    {% if current_user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
-                            <i class="fas fa-chart-line"></i> Dashboard
+                        <a class="nav-link {% if request.path == '/dashboard' %}active{% endif %}" href="{{ url_for('main.dashboard') }}">
+                            <i class="fas fa-th-large me-2"></i>Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/analytics' %}active{% endif %}" href="/analytics">
-                            <i class="fas fa-analytics"></i> Analytics
+                        <a class="nav-link {% if request.path == '/analytics' %}active{% endif %}" href="{{ url_for('main.analytics') }}">
+                            <i class="fas fa-chart-pie me-2"></i>Analytics
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/models' %}active{% endif %}" href="/models">
-                            <i class="fas fa-brain"></i> Models
+                        <a class="nav-link {% if request.path == '/models' %}active{% endif %}" href="{{ url_for('main.models_page') }}">
+                            <i class="fas fa-layer-group me-2"></i>Models
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/predict' %}active{% endif %}" href="/predict">
-                            <i class="fas fa-magic"></i> Predict
+                        <a class="nav-link {% if request.path == '/predict' %}active{% endif %}" href="{{ url_for('main.predict_interface') }}">
+                            <i class="fas fa-vial me-2"></i>Predict
+                        </a>
+                    </li>
+                    <li class="nav-item mx-2 d-none d-xl-block">
+                        <div class="vr bg-light opacity-25" style="height: 20px;"></div>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/plans' %}active{% endif %}" href="{{ url_for('payments.plans') }}">
+                            <i class="fas fa-credit-card me-2"></i>Plans
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/plans' %}active{% endif %}" href="/plans">
-                            <i class="fas fa-credit-card"></i> Plans & Pricing
+                        <a class="nav-link {% if request.path == '/settings' %}active{% endif %}" href="{{ url_for('main.settings') }}">
+                            <i class="fas fa-sliders me-2"></i>Settings
                         </a>
                     </li>
+                    <li class="nav-item dropdown ms-xl-3">
+                        <a class="nav-link dropdown-toggle bg-primary-light rounded px-3" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-2"></i>{{ current_user.email.split('@')[0] }}
+                            <span class="badge bg-accent ms-2" style="font-size: 0.6rem;">{{ current_user.subscription_plan }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                            <li><a class="dropdown-item small" href="{{ url_for('main.settings') }}"><i class="fas fa-cog me-2 opacity-50"></i>Account Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item small text-danger" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt me-2 opacity-50"></i>Sign Out</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/settings' %}active{% endif %}" href="/settings">
-                            <i class="fas fa-cog"></i> Settings
+                        <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+                    </li>
+                    <li class="nav-item ms-xl-2">
+                        <a class="btn btn-primary btn-sm px-4" href="{{ url_for('auth.register') }}">
+                            Get Started
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/about' %}active{% endif %}" href="/about">
-                            <i class="fas fa-info-circle"></i> About
-                        </a>
-                    </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Alerts/Messages -->
-    <div class="container-fluid">
+    <!-- System Feedback -->
+    <div class="container-fluid py-0 px-4 mt-3">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show mt-3 mx-3" role="alert">
-                        <i class="fas fa-{{ 'exclamation-circle' if category == 'error' else 'check-circle' }} me-2"></i>
-                        {{ message }}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show border-0 shadow-sm" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-{{ 'circle-exclamation' if category == 'error' else 'circle-check' }} fs-5 me-3"></i>
+                            <div>{{ message }}</div>
+                        </div>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 {% endfor %}
@@ -82,47 +106,111 @@
         {% endwith %}
     </div>
 
-    <!-- Main Content -->
-    <main class="main-content pb-5">
+    <!-- Main Content Area -->
+    <main class="content-wrapper min-vh-100">
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-dark text-light mt-5 py-4 border-top">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-4 mb-3 mb-md-0">
-                    <h6 class="fw-bold mb-2">
-                        <i class="fas fa-industry me-2"></i>IndustriSense AI
-                    </h6>
-                    <p class="small text-muted">
-                        Advanced predictive maintenance powered by machine learning.
+    <!-- Professional Footer -->
+    <footer class="bg-white border-top py-5 mt-5">
+        <div class="container-fluid px-4">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <a class="navbar-brand text-dark mb-3 p-0" href="{{ url_for('main.index') }}">
+                        <i class="fas fa-microchip text-accent"></i>
+                        <span>IndustriSense <span class="text-primary">AI</span></span>
+                    </a>
+                    <p class="text-muted small pe-lg-5">
+                        Delivering state-of-the-art predictive maintenance solutions for modern industrial ecosystems. Powered by XGBoost and Explainable AI.
                     </p>
+                    <div class="d-flex gap-3 mt-4">
+                        <a href="#" class="text-muted fs-5 hover-accent"><i class="fab fa-github"></i></a>
+                        <a href="#" class="text-muted fs-5 hover-accent"><i class="fab fa-linkedin"></i></a>
+                        <a href="#" class="text-muted fs-5 hover-accent"><i class="fab fa-twitter"></i></a>
+                    </div>
                 </div>
-                <div class="col-md-4 mb-3 mb-md-0">
-                    <h6 class="fw-bold mb-2">Quick Links</h6>
-                    <ul class="list-unstyled small">
-                        <li><a href="/" class="text-decoration-none text-muted">Dashboard</a></li>
-                        <li><a href="/analytics" class="text-decoration-none text-muted">Analytics</a></li>
-                        <li><a href="/models" class="text-decoration-none text-muted">Models</a></li>
-                        <li><a href="/about" class="text-decoration-none text-muted">About Us</a></li>
+                <div class="col-sm-6 col-lg-2">
+                    <h6 class="fw-bold mb-3">Platform</h6>
+                    <ul class="list-unstyled small d-grid gap-2">
+                        <li><a href="{{ url_for('main.dashboard') }}" class="text-muted text-decoration-none">Dashboard</a></li>
+                        <li><a href="{{ url_for('main.predict_interface') }}" class="text-muted text-decoration-none">Prediction Tool</a></li>
+                        <li><a href="{{ url_for('main.analytics') }}" class="text-muted text-decoration-none">Advanced Analytics</a></li>
                     </ul>
                 </div>
-                <div class="col-md-4">
-                    <h6 class="fw-bold mb-2">Connect</h6>
-                    <div class="social-links">
-                        <a href="#" class="text-muted me-3"><i class="fab fa-github"></i></a>
-                        <a href="#" class="text-muted me-3"><i class="fab fa-linkedin"></i></a>
-                        <a href="#" class="text-muted"><i class="fab fa-twitter"></i></a>
+                <div class="col-sm-6 col-lg-2">
+                    <h6 class="fw-bold mb-3">Resources</h6>
+                    <ul class="list-unstyled small d-grid gap-2">
+                        <li><a href="{{ url_for('main.models_page') }}" class="text-muted text-decoration-none">Model Specs</a></li>
+                        <li><a href="{{ url_for('main.about') }}" class="text-muted text-decoration-none">Documentation</a></li>
+                        <li><a href="{{ url_for('main.settings') }}" class="text-muted text-decoration-none">System Status</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    <h6 class="fw-bold mb-3">Stay Updated</h6>
+                    <p class="text-muted small">Receive maintenance alerts and platform updates.</p>
+                    <div class="input-group input-group-sm mb-3 ms-lg-auto" style="max-width: 300px;">
+                        <input type="email" class="form-control bg-light border-0" placeholder="Email address">
+                        <button class="btn btn-primary" type="button">Join</button>
                     </div>
                 </div>
             </div>
-            <hr class="my-3 bg-secondary">
-            <div class="text-center small text-muted">
-                <p>&copy; 2026 IndustriSense AI. All rights reserved. | Predictive Maintenance Excellence</p>
+            <hr class="my-4 opacity-10">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                <p class="text-muted small mb-0">&copy; 2026 IndustriSense AI. Built for operational excellence.</p>
+                <div class="d-flex gap-4 small text-muted">
+                    <a href="#" class="text-muted text-decoration-none">Privacy Policy</a>
+                    <a href="#" class="text-muted text-decoration-none">Terms of Service</a>
+                </div>
             </div>
         </div>
     </footer>
+
+    <!-- IndustriSense Assistant Bot -->
+    <div id="industrisense-bot" class="assistant-bot">
+        <!-- Bot Toggle Button -->
+        <button id="bot-toggle" class="bot-fab shadow-lg" title="IndustriSense Assistant">
+            <i class="fas fa-robot"></i>
+            <span class="pulse-ring"></span>
+        </button>
+
+        <!-- Bot Chat Window -->
+        <div id="bot-window" class="bot-window shadow-lg d-none">
+            <div class="bot-header">
+                <div class="d-flex align-items-center">
+                    <div class="bot-avatar me-2 text-white">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0 fw-bold text-white">Fleet Assistant</h6>
+                        <small class="text-white-50">AI Powered Support</small>
+                    </div>
+                </div>
+                <button id="bot-close" class="btn-close btn-close-white small"></button>
+            </div>
+            
+            <div id="bot-messages" class="bot-messages p-3">
+                <div class="message bot-message mb-2">
+                    Hello! I'm your Fleet Assistant. How can I help you today?
+                </div>
+                <!-- Suggested Questions -->
+                <div class="bot-suggestions mt-3">
+                    <button class="btn btn-sm btn-outline-primary suggestion-btn mb-2" data-query="Explain RUL metrics">Explain Metrics</button>
+                    <button class="btn btn-sm btn-outline-primary suggestion-btn mb-2" data-query="Tell me about project security">Security Specs</button>
+                    <button class="btn btn-sm btn-outline-primary suggestion-btn mb-2" data-query="Subscription plans">Pricing Tiers</button>
+                    <button class="btn btn-sm btn-outline-primary suggestion-btn mb-2" data-query="What technology is used?">Tech Stack</button>
+                </div>
+            </div>
+
+            <div class="bot-input-area p-2 border-top bg-white">
+                <div class="input-group input-group-sm">
+                    <input type="text" id="bot-input" class="form-control border-0 bg-light" placeholder="Ask a question...">
+                    <button id="bot-send" class="btn btn-primary border-0">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

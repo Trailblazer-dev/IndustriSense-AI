@@ -39,7 +39,7 @@
                 </ul>
                 
                 <div class="card-actions">
-                    <a href="/checkout/{{ plan.name|lower }}" class="cta-button cta-primary {% if plan.highlighted %}cta-active{% endif %}">
+                    <a href="{{ url_for('payments.checkout', plan_name=plan.name|lower) }}" class="cta-button cta-primary {% if plan.highlighted %}cta-active{% endif %}">
                         {{ plan.btn_text }}
                         <i class="fas fa-arrow-right ms-2"></i>
                     </a>

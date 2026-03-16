@@ -3,185 +3,259 @@
 {% block title %}Dashboard - IndustriSense AI{% endblock %}
 
 {% block content %}
-<div class="dashboard">
-    <h1 class="page-title">Machine Maintenance Dashboard</h1>
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h1 class="page-title mb-1">Fleet Monitor</h1>
+            <p class="text-muted">Real-time health status across your industrial assets</p>
+        </div>
+        <div class="pb-3">
+            <span class="badge bg-white text-primary border px-3 py-2 shadow-sm">
+                <i class="fas fa-sync fa-spin me-2"></i>Live Update
+            </span>
+        </div>
+    </div>
     
+    <!-- Strategic Stats -->
     <div class="stats-grid">
         <div class="stat-card">
-            <h3>Total Machines</h3>
+            <h3>Total Assets</h3>
             <p class="stat-value" id="total-machines">{{ machines|length }}</p>
+            <div class="progress mt-3" style="height: 4px;">
+                <div class="progress-bar bg-accent" style="width: 100%"></div>
+            </div>
         </div>
         <div class="stat-card critical">
-            <h3>🔴 Critical</h3>
+            <h3>Critical Risk</h3>
             <p class="stat-value" id="critical-count">{{ status_counts.critical }}</p>
+            <div class="progress mt-3" style="height: 4px;">
+                <div class="progress-bar bg-danger" style="width: {{ (status_counts.critical / machines|length * 100)|round if machines|length > 0 else 0 }}%"></div>
+            </div>
         </div>
         <div class="stat-card warning">
-            <h3>🟡 Warning</h3>
+            <h3>Active Warnings</h3>
             <p class="stat-value" id="warning-count">{{ status_counts.warning }}</p>
+            <div class="progress mt-3" style="height: 4px;">
+                <div class="progress-bar bg-warning" style="width: {{ (status_counts.warning / machines|length * 100)|round if machines|length > 0 else 0 }}%"></div>
+            </div>
         </div>
         <div class="stat-card normal">
-            <h3>🟢 Normal</h3>
+            <h3>Operational</h3>
             <p class="stat-value" id="normal-count">{{ status_counts.normal }}</p>
+            <div class="progress mt-3" style="height: 4px;">
+                <div class="progress-bar bg-success" style="width: {{ (status_counts.normal / machines|length * 100)|round if machines|length > 0 else 0 }}%"></div>
+            </div>
         </div>
     </div>
 
-    <h2 class="section-title">Machine Status Overview</h2>
+    <div class="section-title">
+        <i class="fas fa-microchip text-accent"></i> Machine Health Tiles
+    </div>
+    
     <div class="machines-grid">
         {% for machine in machines %}
-        <div class="machine-card status-{{ machine.status|lower }}">
-            <!-- Header: Machine ID + Status Badge -->
+        <div class="machine-card status-{{ machine.status|lower }}" onclick="loadMachineDetails({{ machine.id }})">
             <div class="card-header">
-                <h3 class="machine-id">Machine {{ machine.id }}</h3>
-                <span class="status-badge status-{{ machine.status|lower }}">{{ machine.status }}</span>
+                <span class="machine-id">#{{ machine.id }}</span>
+                <span class="status-badge status-{{ machine.status|lower }}">
+                    <i class="fas fa-{{ 'circle-exclamation' if machine.status == 'CRITICAL' else 'triangle-exclamation' if machine.status == 'WARNING' else 'circle-check' }} me-1"></i>
+                    {{ machine.status }}
+                </span>
             </div>
             
-            <!-- Body: Key Metrics -->
             <div class="card-body">
-                <!-- Primary: Failure Risk -->
                 <div class="metric-primary">
                     <div class="metric-label">Failure Risk</div>
                     <div class="metric-value-large">{{ machine.failure_risk }}%</div>
                 </div>
                 
-                <!-- Tool Wear Prediction -->
                 <div class="metric-row">
                     <div class="metric-block">
-                        <div class="metric-label-small">Predicted Tool Wear</div>
-                        <div class="metric-value-medium">{{ machine.predicted_tool_wear }} min</div>
+                        <div class="metric-label-small">Est. Wear</div>
+                        <div class="metric-value-medium text-primary">{{ machine.predicted_tool_wear }}<small class="ms-1 fw-normal text-muted">min</small></div>
                     </div>
                     <div class="metric-block">
-                        <div class="metric-label-small">Remaining Useful Life</div>
-                        <div class="metric-value-medium">{{ machine.predicted_rul }} min</div>
+                        <div class="metric-label-small">RUL</div>
+                        <div class="metric-value-medium text-accent">{{ machine.predicted_rul }}<small class="ms-1 fw-normal text-muted">min</small></div>
                     </div>
                 </div>
             </div>
             
-            <!-- Footer: Timestamp -->
             <div class="card-footer">
-                <span class="timestamp">{{ machine.timestamp|default('Updated now', true) }}</span>
+                <span class="timestamp">
+                    <i class="far fa-clock me-1"></i>{{ machine.timestamp|default('Just now', true) }}
+                </span>
             </div>
         </div>
         {% endfor %}
     </div>
 
-    <!-- Machine Details Modal -->
-    <div id="machineModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeMachineModal()">&times;</span>
-            <div id="machineDetails"></div>
+    <!-- Enhanced Machine Details Modal -->
+    <div class="modal fade" id="machineModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header px-4 py-3">
+                    <h5 class="modal-title fw-bold" id="modalTitle">Machine Analysis</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4" id="machineDetails">
+                    <!-- Dynamic content loads here -->
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-accent" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0 px-4 py-3">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Close Report</button>
+                    <a href="{{ url_for('main.predict_interface') }}" class="btn btn-primary px-4">Manual Diagnostics</a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
 <script>
+let machineModal;
+
+document.addEventListener('DOMContentLoaded', () => {
+    machineModal = new bootstrap.Modal(document.getElementById('machineModal'));
+});
+
 function loadMachineDetails(machineId) {
-    fetch(`/api/machines/${machineId}`)
+    // Show modal with loader first
+    document.getElementById('machineDetails').innerHTML = `
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading analysis...</span>
+            </div>
+            <p class="mt-3 text-muted">Retrieving diagnostic data...</p>
+        </div>
+    `;
+    machineModal.show();
+
+    fetch('{{ url_for("api.get_machine_details", machine_id=0) }}'.replace('0', machineId))
         .then(response => response.json())
         .then(data => {
-            let html = `<h2>Machine ${data.machine_id} - Detailed Analysis (Transparency Report)</h2>`;
+            document.getElementById('modalTitle').innerHTML = `
+                <i class="fas fa-microchip text-accent me-2"></i>Machine #${data.machine_id} Diagnostic Report
+            `;
             
-            // MODEL RELIABILITY WARNING (PROMINENT)
-            html += `<div class="reliability-warning">`;
-            html += `<h3>⚠️ Model Reliability Assessment</h3>`;
-            html += `<div class="reliability-status reliability-${data.model_reliability.status.toLowerCase()}">`;
-            html += `<strong>Status: ${data.model_reliability.status}</strong><br>`;
-            html += `${data.model_reliability.warning}<br><br>`;
-            html += `<em>${data.model_reliability.assessment}</em>`;
-            html += `</div>`;
-            html += `</div>`;
-            
-            // Failure Analysis
-            html += `<div class="details-section">`;
-            html += `<h3>🟢 Failure Risk Analysis (Production-Ready)</h3>`;
-            html += `<div class="details-grid">`;
-            html += `<div class="detail-item"><strong>Failure Probability:</strong> ${data.failure_analysis.probability_percent}%</div>`;
-            html += `<div class="detail-item"><strong>Status:</strong> <span class="status-badge status-${data.failure_analysis.status.toLowerCase()}">${data.failure_analysis.status}</span></div>`;
-            html += `<div class="detail-item"><strong>Note:</strong> ${data.failure_analysis.note}</div>`;
-            html += `</div>`;
-            html += `</div>`;
-            
-            // Tool Wear Analysis (Hybrid)
-            html += `<div class="details-section">`;
-            html += `<h3>⚙️ Tool Wear Analysis (Actual vs. Predicted)</h3>`;
-            html += `<div class="comparison-table">`;
-            html += `<table>`;
-            html += `<tr><th>Metric</th><th>Actual (Ground Truth)</th><th>Predicted (Beta Model)</th><th>Difference</th></tr>`;
-            html += `<tr>`;
-            html += `<td><strong>Tool Wear</strong></td>`;
-            html += `<td class="metric-actual">${data.tool_wear_analysis.actual_tool_wear_minutes} min</td>`;
-            html += `<td class="metric-predicted">${data.tool_wear_analysis.predicted_tool_wear_minutes} min</td>`;
-            html += `<td class="error-highlight">±${data.tool_wear_analysis.prediction_error_minutes} min (${data.tool_wear_analysis.prediction_error_percent}%)</td>`;
-            html += `</tr>`;
-            html += `</table>`;
-            html += `</div>`;
-            html += `<p class="warning-text"><em>⚠️ RUL regressor is in BETA. Large error margins indicate model needs improvement with real-world training data.</em></p>`;
-            html += `</div>`;
-            
-            // RUL Analysis (Hybrid)
-            html += `<div class="details-section">`;
-            html += `<h3>⏱️ Remaining Useful Life (RUL) Analysis</h3>`;
-            html += `<div class="comparison-table">`;
-            html += `<table>`;
-            html += `<tr><th>Metric</th><th>Actual (Ground Truth)</th><th>Predicted (Beta Model)</th></tr>`;
-            html += `<tr>`;
-            html += `<td><strong>RUL</strong></td>`;
-            html += `<td class="metric-actual"><strong>${data.rul_analysis.actual_remaining_useful_life}</strong> min</td>`;
-            html += `<td class="metric-predicted"><strong>${data.rul_analysis.predicted_remaining_useful_life}</strong> min</td>`;
-            html += `</tr>`;
-            html += `</table>`;
-            html += `</div>`;
-            html += `<p class="warning-text">Difference: ${data.rul_analysis.rul_difference} minutes. Consider actual measured values for production decisions.</p>`;
-            html += `</div>`;
-            
-            // Features Table
-            html += `<div class="details-section">`;
-            html += `<h3>📊 Feature Values (Scaled)</h3>`;
-            html += `<table class="features-table">`;
-            html += `<tr><th>Feature</th><th>Scaled Value</th></tr>`;
-            for (const [feature, value] of Object.entries(data.features)) {
-                html += `<tr><td>${feature}</td><td>${parseFloat(value).toFixed(3)}</td></tr>`;
-            }
-            html += `</table>`;
-            html += `</div>`;
-            
-            // Transparency Note
-            html += `<div class="details-section info-box">`;
-            html += `<p><strong>📋 Transparency Report:</strong></p>`;
-            html += `<p>${data.model_performance_note}</p>`;
-            html += `<p style="margin-top: 10px; color: #d32f2f;"><strong>Development Status:</strong></p>`;
-            html += `<ul style="margin-left: 20px;">`;
-            html += `<li>✓ <strong>Failure Classifier:</strong> 83.8% recall - Production ready</li>`;
-            html += `<li>⚠️ <strong>RUL Regressor:</strong> Beta/Experimental - High error margins, needs improvement</li>`;
-            html += `<li>📌 <strong>Recommendation:</strong> Use actual tool wear measurements for critical decisions until regressor accuracy improves</li>`;
-            html += `</ul>`;
-            html += `</div>`;
+            let html = `
+                <!-- Reliability Header -->
+                <div class="reliability-warning border-0 shadow-sm d-flex align-items-start mb-4">
+                    <div class="bg-warning bg-opacity-10 p-3 rounded-circle me-3">
+                        <i class="fas fa-shield-halved text-warning fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold text-warning mb-1">Model Reliability: ${data.model_reliability.status}</h6>
+                        <p class="small text-muted mb-0">${data.model_reliability.warning}</p>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Failure Risk Card -->
+                    <div class="col-md-6">
+                        <div class="details-section h-100 shadow-sm border">
+                            <h6 class="fw-bold mb-3"><i class="fas fa-bolt text-danger me-2"></i>Risk Assessment</h6>
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span class="small text-muted">Probability</span>
+                                <span class="fw-bold fs-4 text-primary">${data.failure_analysis.probability_percent}%</span>
+                            </div>
+                            <div class="progress mb-3" style="height: 10px;">
+                                <div class="progress-bar bg-danger" style="width: ${data.failure_analysis.probability_percent}%"></div>
+                            </div>
+                            <span class="status-badge status-${data.failure_analysis.status.toLowerCase()} d-block text-center">
+                                ${data.failure_analysis.status}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Tool Life Card -->
+                    <div class="col-md-6">
+                        <div class="details-section h-100 shadow-sm border">
+                            <h6 class="fw-bold mb-3"><i class="fas fa-hourglass-half text-accent me-2"></i>Remaining Life</h6>
+                            <div class="text-center py-2">
+                                <div class="metric-value-large mb-0">${data.rul_analysis.predicted_remaining_useful_life}</div>
+                                <div class="small text-muted uppercase">Minutes Remaining</div>
+                            </div>
+                            <div class="mt-3 p-2 bg-white rounded border small text-center text-muted">
+                                <i class="far fa-calendar-alt me-1"></i> Est. Service: ${data.rul_analysis.predicted_calendar_time.formatted}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actual vs Predicted Table -->
+                    <div class="col-12">
+                        <div class="table-container border">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Metric Type</th>
+                                        <th class="text-center">Actual (Verified)</th>
+                                        <th class="text-center">AI Estimate</th>
+                                        <th class="text-center">Variance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="fw-medium">Cumulative Wear</td>
+                                        <td class="text-center">${data.tool_wear_analysis.actual_tool_wear_minutes} min</td>
+                                        <td class="text-center text-accent fw-bold">${data.tool_wear_analysis.predicted_tool_wear_minutes} min</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-light text-danger">±${data.tool_wear_analysis.prediction_error_minutes} min</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Sensor Telemetry -->
+                    <div class="col-12">
+                        <h6 class="fw-bold mb-3 px-1">Raw Sensor Telemetry</h6>
+                        <div class="details-grid">
+                            ${Object.entries(data.features).map(([key, val]) => `
+                                <div class="detail-item shadow-sm">
+                                    <div class="metric-label-small text-truncate" title="${key}">${key}</div>
+                                    <div class="fw-bold text-primary">${typeof val === 'number' ? val.toFixed(2) : val}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 p-3 bg-light rounded-3 small">
+                    <p class="mb-0 text-muted fst-italic">
+                        <strong>Transparency Note:</strong> ${data.model_performance_note}
+                    </p>
+                </div>
+            `;
             
             document.getElementById('machineDetails').innerHTML = html;
-            document.getElementById('machineModal').style.display = 'block';
+        })
+        .catch(err => {
+            document.getElementById('machineDetails').innerHTML = `
+                <div class="alert alert-danger mx-auto my-5 border-0 shadow-sm" style="max-width: 400px;">
+                    <i class="fas fa-exclamation-circle me-2"></i>Failed to load machine data.
+                </div>
+            `;
         });
 }
 
-function closeMachineModal() {
-    document.getElementById('machineModal').style.display = 'none';
-}
-
-window.onclick = function(event) {
-    const modal = document.getElementById('machineModal');
-    if (event.target === modal) {
-        modal.style.display = 'none';
-    }
-}
-
-// Refresh stats every 30 seconds
+// Refresh fleet stats every 60 seconds
 setInterval(() => {
-    fetch('/api/stats')
+    fetch('{{ url_for("api.get_stats") }}')
         .then(response => response.json())
         .then(data => {
-            document.getElementById('total-machines').textContent = data.total_machines;
-            document.getElementById('critical-count').textContent = data.critical_count;
-            document.getElementById('warning-count').textContent = data.warning_count;
-            document.getElementById('normal-count').textContent = data.normal_count;
+            if(document.getElementById('total-machines')) document.getElementById('total-machines').textContent = data.total_machines;
+            if(document.getElementById('critical-count')) document.getElementById('critical-count').textContent = data.critical_count;
+            if(document.getElementById('warning-count')) document.getElementById('warning-count').textContent = data.warning_count;
+            if(document.getElementById('normal-count')) document.getElementById('normal-count').textContent = data.normal_count;
         });
-}, 30000);
+}, 60000);
 </script>
 {% endblock %}

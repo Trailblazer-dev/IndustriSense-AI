@@ -6,6 +6,19 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     DEBUG = False
     TESTING = False
+    TALISMAN_FORCE_HTTPS = False
+    
+    # Security
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SECURE = True if os.environ.get('FLASK_ENV') == 'production' else False
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    PERMANENT_SESSION_LIFETIME = 3600 # 1 hour
+    WTF_CSRF_ENABLED = True
+    
+    # Database
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
+        'sqlite:///' + os.path.join(os.path.dirname(__file__), 'industrisense.db')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Model paths
     MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src', 'models')
@@ -35,6 +48,7 @@ class ProductionConfig(Config):
     """Production configuration"""
     DEBUG = False
     TESTING = False
+    TALISMAN_FORCE_HTTPS = True
     # SECRET_KEY must be set via environment variable in production
     @classmethod
     def validate(cls):
