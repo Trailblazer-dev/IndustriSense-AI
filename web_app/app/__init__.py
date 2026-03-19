@@ -57,3 +57,6 @@ def create_app(config_name='default'):
         db.create_all()
 
     return app
+
+# Instantiate the application for production deployment (Gunicorn looks for 'app' in 'app')
+app = create_app(os.environ.get('FLASK_ENV', 'production'))
