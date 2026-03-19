@@ -93,7 +93,7 @@ The IndustriSense-AI prototype is **fundamentally constrained by the nature of t
 | FR-6: RUL Estimation | ✓ FEASIBLE (MODIFIED) | Analytical regression on Tool Wear (not CLSTM forecasting) |
 | FR-7: Health Gauge | ✓ FEASIBLE | Snapshot health score from failure probability |
 | FR-8: Risk Alerts | ✓ FEASIBLE | Probability thresholds trigger alerts |
-| FR-9: SHAP Explanations | ✓ FEASIBLE | Cross-sectional explanations fully supported |
+| FR-9: Statistical Explanations | ✓ FEASIBLE | Cross-sectional explanations fully supported |
 | FR-10: Financial Tracking | ✗ FUTURE | Requires business data (Phase 2) |
 
 ### 3.1 Functional Requirements
@@ -148,11 +148,11 @@ The IndustriSense-AI prototype is **fundamentally constrained by the nature of t
     - **Failure Mode Alerts:** Separate alerts for each failure mode (TWF, HDF, PWF, OSF, RNF) with specific guidance
     - **Limitation:** Detects high-risk snapshots, not temporal transitions (e.g., "risk jumped from 20% to 80%"). Transition detection requires time-series comparison.
 
--   **FR-9 [FEASIBLE]:** The dashboard shall include SHAP-based explanations for each alert, showing which features most influenced the risk assessment.
-    - **Implementation:** For each prediction, generate SHAP force plot showing top 3-5 sensors driving the failure probability
-    - **Example Output:** "Failure risk is HIGH because: (1) Torque is 20% above historical mean (contributes +25% to risk), (2) Tool Wear is 80% of max (contributes +18% to risk), (3) Temperature Differential is elevated (contributes +15% to risk)"
-    - **Feasibility:** SHAP is applicable to XGBoost models on cross-sectional data
-    - **User Value:** Non-technical operators understand not just "risk = 85%" but WHY
+-   **FR-9 [FEASIBLE]:** The dashboard shall include transparency reports for each alert, showing which features most influenced the risk assessment through statistical variance analysis.
+    - **Implementation:** For each prediction, generate a report showing top 3-5 sensors driving the failure probability.
+    - **Example Output:** "Failure risk is HIGH because: (1) Torque is 20% above historical mean, (2) Tool Wear is 80% of max."
+    - **Feasibility:** Statistical variance analysis is highly efficient for XGBoost on cross-sectional data.
+    - **User Value:** Non-technical operators understand not just "risk = 85%" but WHY.
 
 -   **FR-10 [FUTURE ENHANCEMENT - DATA REQUIRED]:** Future version shall feature a "Financial Impact Tracker" estimating prevented downtime and associated savings.
     - **Requirements for Implementation:** 

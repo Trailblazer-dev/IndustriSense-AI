@@ -37,16 +37,13 @@ def dashboard():
     X_all_classifier = df_scaled_local[mls.FEATURE_COLS_CLASSIFIER]
     X_all_regressor = df_raw_local[mls.FEATURE_COLS_REGRESSOR]
     
-    all_failure_probs = classifier.predict_proba(X_all_classifier)[:, 1] * 100
+    all_failure_probs = classifier.predict_proba(X_all_classifier)[:, 1]
     all_predicted_wear = regressor.predict(X_all_regressor)
     
-    statuses = np.full(len(df_raw_local), 'NORMAL', dtype='U10')
-    warning_mask = (all_predicted_wear >= 150) | (all_failure_probs >= 50)
-    critical_mask = (all_predicted_wear >= 200) | (all_failure_probs >= 75)
+    # Use centralized status calculation
+    statuses = mls.calculate_statuses(all_failure_probs, all_predicted_wear)
     
-    statuses[warning_mask] = 'WARNING'
-    statuses[critical_mask] = 'CRITICAL'
-    
+    # Stratified Sampling for dashboard from user's machines
     np.random.seed(42 + current_user.id)
     critical_indices = np.where(statuses == 'CRITICAL')[0]
     warning_indices = np.where(statuses == 'WARNING')[0]
@@ -65,7 +62,7 @@ def dashboard():
         original_idx = user_indices[local_idx]
         machines.append({
             'id': int(original_idx),
-            'failure_risk': round(all_failure_probs[local_idx], 1),
+            'failure_risk': round(all_failure_probs[local_idx] * 100, 1),
             'predicted_tool_wear': round(all_predicted_wear[local_idx], 1),
             'predicted_rul': max(0, max_wear_threshold - int(all_predicted_wear[local_idx])),
             'status': statuses[local_idx],

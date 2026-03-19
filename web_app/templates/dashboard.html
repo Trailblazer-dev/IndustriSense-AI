@@ -20,7 +20,7 @@
     <div class="stats-grid">
         <div class="stat-card">
             <h3>Total Assets</h3>
-            <p class="stat-value" id="total-machines">{{ machines|length }}</p>
+            <p class="stat-value" id="total-machines">{{ status_counts.total }}</p>
             <div class="progress mt-3" style="height: 4px;">
                 <div class="progress-bar bg-accent" style="width: 100%"></div>
             </div>
@@ -29,21 +29,21 @@
             <h3>Critical Risk</h3>
             <p class="stat-value" id="critical-count">{{ status_counts.critical }}</p>
             <div class="progress mt-3" style="height: 4px;">
-                <div class="progress-bar bg-danger" style="width: {{ (status_counts.critical / machines|length * 100)|round if machines|length > 0 else 0 }}%"></div>
+                <div id="critical-progress" class="progress-bar bg-danger" style="width: {{ (status_counts.critical / status_counts.total * 100)|round if status_counts.total > 0 else 0 }}%"></div>
             </div>
         </div>
         <div class="stat-card warning">
             <h3>Active Warnings</h3>
             <p class="stat-value" id="warning-count">{{ status_counts.warning }}</p>
             <div class="progress mt-3" style="height: 4px;">
-                <div class="progress-bar bg-warning" style="width: {{ (status_counts.warning / machines|length * 100)|round if machines|length > 0 else 0 }}%"></div>
+                <div id="warning-progress" class="progress-bar bg-warning" style="width: {{ (status_counts.warning / status_counts.total * 100)|round if status_counts.total > 0 else 0 }}%"></div>
             </div>
         </div>
         <div class="stat-card normal">
             <h3>Operational</h3>
             <p class="stat-value" id="normal-count">{{ status_counts.normal }}</p>
             <div class="progress mt-3" style="height: 4px;">
-                <div class="progress-bar bg-success" style="width: {{ (status_counts.normal / machines|length * 100)|round if machines|length > 0 else 0 }}%"></div>
+                <div id="normal-progress" class="progress-bar bg-success" style="width: {{ (status_counts.normal / status_counts.total * 100)|round if status_counts.total > 0 else 0 }}%"></div>
             </div>
         </div>
     </div>
@@ -251,10 +251,25 @@ setInterval(() => {
     fetch('{{ url_for("api.get_stats") }}')
         .then(response => response.json())
         .then(data => {
-            if(document.getElementById('total-machines')) document.getElementById('total-machines').textContent = data.total_machines;
+            if(data.error) return;
+            
+            const total = data.total_machines;
+            
+            // Update Text
+            if(document.getElementById('total-machines')) document.getElementById('total-machines').textContent = total;
             if(document.getElementById('critical-count')) document.getElementById('critical-count').textContent = data.critical_count;
             if(document.getElementById('warning-count')) document.getElementById('warning-count').textContent = data.warning_count;
             if(document.getElementById('normal-count')) document.getElementById('normal-count').textContent = data.normal_count;
+            
+            // Update Progress Bars
+            if(total > 0) {
+                if(document.getElementById('critical-progress')) 
+                    document.getElementById('critical-progress').style.width = (data.critical_count / total * 100) + '%';
+                if(document.getElementById('warning-progress')) 
+                    document.getElementById('warning-progress').style.width = (data.warning_count / total * 100) + '%';
+                if(document.getElementById('normal-progress')) 
+                    document.getElementById('normal-progress').style.width = (data.normal_count / total * 100) + '%';
+            }
         });
 }, 60000);
 </script>

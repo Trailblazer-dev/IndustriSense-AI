@@ -1,15 +1,15 @@
-"""Train RUL regressor (XGBoost) with MLOps best practices.
+"""Train Failure Classifier (XGBoost) with MLOps best practices.
 
 This script:
-- Loads `data/processed/features_engineered_raw.csv`
-- Trains an `xgboost.XGBRegressor` using 80/20 split
+- Loads `data/processed/features_engineered_scaled.csv`
+- Trains an `xgboost.XGBClassifier` using stratified 80/20 split
 - Evaluates on a hold-out test set
-- Compares performance with the existing production model (MAE comparison)
+- Compares performance with the existing production model
 - Automatically swaps artifacts if the new model is superior
 - Maintains model metadata and integrity hashes
 
 Run:
-    python -m src.models.train_rul_regressor
+    python -m src.models.train_classifier
 """
 import os
 import json
@@ -17,19 +17,18 @@ import pickle
 import shutil
 import hashlib
 from pathlib import Path
-from datetime import datetime
 from typing import Dict, Optional
 
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import recall_score, precision_score, f1_score, roc_auc_score
 
 import xgboost as xgb
 
 RANDOM_STATE = 42
-MODEL_NAME = "xgboost_wear_regressor"
-PRIMARY_METRIC = "mae"  # Lower is better
+MODEL_NAME = "xgboost_classifier"
+PRIMARY_METRIC = "recall"  # We prioritize catching failures
 
 def sha256_file(path: Path) -> str:
     """Compute sha256 of a file."""
@@ -40,23 +39,26 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 def get_existing_performance(model_dir: Path) -> Optional[float]:
-    """Extract primary metric (MAE) from existing metadata."""
-    metadata_path = model_dir / "rul_metadata.json"
+    """Extract primary metric from existing metadata."""
+    metadata_path = model_dir / "model_metadata.json"
     if not metadata_path.exists():
         return None
     try:
         with open(metadata_path, 'r') as f:
             meta = json.load(f)
+            # Check test_performance then cv_performance fallback
             perf = meta.get('test_performance', {}).get(PRIMARY_METRIC)
+            if perf is None:
+                perf = meta.get('cv_performance', {}).get(f'mean_{PRIMARY_METRIC}')
             return float(perf) if perf is not None else None
     except Exception:
         return None
 
 def main():
     repo_root = Path(__file__).resolve().parents[2]
-    data_path = repo_root / 'data' / 'processed' / 'features_engineered_raw.csv'
+    data_path = repo_root / 'data' / 'processed' / 'features_engineered_scaled.csv'
     model_dir = repo_root / 'src' / 'models'
-    temp_dir = model_dir / 'temp_train_rul'
+    temp_dir = model_dir / 'temp_train'
     temp_dir.mkdir(parents=True, exist_ok=True)
 
     if not data_path.exists():
@@ -65,56 +67,49 @@ def main():
     print(f"Loading data from {data_path}...")
     df = pd.read_csv(data_path)
 
-    features = [
+    feature_cols = [
         'Air temperature [K]', 'Process temperature [K]', 'Rotational speed [rpm]',
-        'Torque [Nm]', 'Temp Diff [K]', 'Speed_x_Torque', 'is_anomaly'
+        'Torque [Nm]', 'Tool wear [min]', 'Stress Index', 'Temp Diff [K]',
+        'Temp_Diff_x_Wear', 'Speed_x_Torque', 'is_anomaly'
     ]
-    target_col = 'Tool wear [min]'
+    target_col = 'Machine failure'
 
-    # Sanitize feature names for XGBoost
-    def sanitize(name: str) -> str:
-        import re
-        s = re.sub(r"[^0-9a-zA-Z_]", "_", name)
-        s = re.sub(r"__+", "_", s)
-        if s[0].isdigit():
-            s = "f_" + s
-        return s
+    X = df[feature_cols].values
+    y = df[target_col].values
 
-    feature_name_map = {orig: sanitize(orig) for orig in features}
-
-    X = df[features].copy()
-    y = df[target_col].astype(float).copy()
-    X_renamed = X.rename(columns=feature_name_map)
-
-    # Train-test split
+    # Stratified 80/20 split
     X_train, X_test, y_train, y_test = train_test_split(
-        X_renamed, y, test_size=0.2, random_state=RANDOM_STATE
+        X, y, test_size=0.2, stratify=y, random_state=RANDOM_STATE, shuffle=True
     )
 
+    scale_pos_weight = (y_train == 0).sum() / (y_train == 1).sum()
+    print(f"Calculated scale_pos_weight: {scale_pos_weight:.2f}")
+
     params = {
-        'objective': 'reg:squarederror',
         'max_depth': 6,
         'learning_rate': 0.1,
         'n_estimators': 200,
         'subsample': 0.8,
         'colsample_bytree': 0.8,
-        'random_state': RANDOM_STATE
+        'scale_pos_weight': scale_pos_weight,
+        'random_state': RANDOM_STATE,
+        'use_label_encoder': False,
+        'eval_metric': 'logloss'
     }
 
-    print("Training new RUL regressor...")
-    model = xgb.XGBRegressor(**params)
+    print("Training new model...")
+    model = xgb.XGBClassifier(**params)
     model.fit(X_train, y_train)
 
     # Evaluation
     y_pred = model.predict(X_test)
-    mae = mean_absolute_error(y_test, y_pred)
-    rmse = float(np.sqrt(mean_squared_error(y_test, y_pred)))
-    r2 = r2_score(y_test, y_pred)
+    y_proba = model.predict_proba(X_test)[:, 1]
 
     metrics = {
-        'mae': float(mae),
-        'rmse': float(rmse),
-        'r2': float(r2),
+        'recall': float(recall_score(y_test, y_pred)),
+        'precision': float(precision_score(y_test, y_pred)),
+        'f1': float(f1_score(y_test, y_pred)),
+        'roc_auc': float(roc_auc_score(y_test, y_proba)),
         'test_samples': int(len(y_test))
     }
 
@@ -128,11 +123,11 @@ def main():
     if existing_perf is None:
         print("No existing model found. Deploying new model as baseline.")
         should_deploy = True
-    elif new_perf <= existing_perf:  # MAE: lower is better
-        print(f"New model improves {PRIMARY_METRIC} ({new_perf:.4f} <= {existing_perf:.4f}).")
+    elif new_perf >= existing_perf:
+        print(f"New model improves {PRIMARY_METRIC} ({new_perf:.4f} >= {existing_perf:.4f}).")
         should_deploy = True
     else:
-        print(f"New model did not outperform existing model ({new_perf:.4f} > {existing_perf:.4f}).")
+        print(f"New model did not outperform existing model ({new_perf:.4f} < {existing_perf:.4f}).")
         print("Deployment skipped.")
 
     if should_deploy:
@@ -152,9 +147,9 @@ def main():
         prod_pkl = model_dir / f"{MODEL_NAME}.pkl"
         prod_xgb = model_dir / f"{MODEL_NAME}.xgb"
         prod_sha = model_dir / f"{MODEL_NAME}.xgb.sha256"
-        prod_meta = model_dir / "rul_metadata.json"
+        prod_meta = model_dir / "model_metadata.json"
 
-        backup_dir = model_dir / 'backups' / f"rul_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        backup_dir = model_dir / 'backups' / datetime.now().strftime('%Y%m%d_%H%M%S')
         backup_dir.mkdir(parents=True, exist_ok=True)
 
         print(f"Backing up current artifacts to {backup_dir}...")
@@ -169,14 +164,12 @@ def main():
 
         # Update metadata
         metadata = {
-            'model_type': 'XGBoost Wear Regressor (RUL Proxy)',
+            'model_type': 'XGBoost Binary Classifier',
             'last_trained': datetime.now().isoformat(),
             'hyperparameters': params,
             'test_performance': metrics,
-            'features': features,
-            'feature_name_map': feature_name_map,
-            'sha256': new_sha,
-            'rul_conversion': 'RUL = 254 - Predicted_Wear (minutes)'
+            'features': feature_cols,
+            'sha256': new_sha
         }
         with open(prod_meta, 'w') as f:
             json.dump(metadata, f, indent=2)

@@ -59,6 +59,8 @@ Features are restricted based on the user's subscription tier:
 - **Professional**: Unlocks **Manual Diagnostics (Predict)** and API access.
 - **Enterprise**: Unlocks **System Calibration** and high-frequency monitoring.
 
+**Note on RUL Accuracy**: As of Version 3.0, the data leakage in the RUL regressor has been successfully remediated. The model now uses clean sensor telemetry exclusively, providing realistic maintenance forecasting.
+
 ### 3. Defensive Security
 - **CSRF Protection**: Every state-changing request (`POST`) is verified via a secure token.
 - **Rate Limiting**: Throttles brute-force attempts on Login (20/hr) and Registration (10/hr).

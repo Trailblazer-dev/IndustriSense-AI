@@ -87,9 +87,9 @@ def get_machine_details(machine_id):
     
     model_reliability = "UNRELIABLE" if abs(wear_error) > 50 else "MODERATE" if abs(wear_error) > 20 else "GOOD"
     reliability_warning = {
-        "UNRELIABLE": "⚠️ WARNING: RUL predictions have high error margins (>50 min).",
-        "MODERATE": "⚠️ BETA: RUL predictions have moderate error (±20-50 min).",
-        "GOOD": "✓ RUL prediction within acceptable range (±<20 min)."
+        "UNRELIABLE": "⚠️ WARNING: RUL predictions have high error margins (>50 min). Verify with physical tool inspection.",
+        "MODERATE": "⚠️ BETA: RUL predictions have moderate error (±20-50 min). Cross-check with actual measured tool wear.",
+        "GOOD": "✓ RUL prediction within acceptable range (±<20 min). Regressor uses clean sensor telemetry."
     }
     
     return jsonify({
@@ -118,43 +118,56 @@ def get_machine_details(machine_id):
             'status': model_reliability,
             'warning': reliability_warning[model_reliability]
         },
-        'model_performance_note': '🔴 CRITICAL: RUL predictions are unreliable due to historical data leakage in training. Failure classifier is trustworthy.',
+        'model_performance_note': '✓ Fixed: RUL predictions are now based on clean sensor telemetry (leaky features removed). Failure classifier remains trustworthy.',
         'timestamp': datetime.now().isoformat()
     })
 
 @api_bp.route('/stats')
 @login_required
 def get_stats():
-    """Get overall system statistics for dashboard sample machines"""
+    """Get statistics for the current monitored sample (10 machines)"""
     data_dict = mls.get_data()
     df_raw_all = data_dict['raw']
     df_scaled_all = data_dict['scaled']
-    
-    classifier, _ = mls.get_models()
+
+    classifier, regressor = mls.get_models()
     if df_raw_all is None or df_scaled_all is None or classifier is None:
         return jsonify({'error': 'Data not loaded'}), 500
-    
+
+    # Get user's machine fleet
     user_machines = mls.get_user_machines(df_raw_all, current_user.id)
     user_indices = user_machines['original_index'].values
-    
-    # Stratified sample from user's fleet
+    df_scaled_local = df_scaled_all.iloc[user_indices]
+
+    # Vectorized inference for status determination
+    X_fleet_classifier = df_scaled_local[mls.FEATURE_COLS_CLASSIFIER]
+    X_fleet_regressor = df_raw_all.iloc[user_indices][mls.FEATURE_COLS_REGRESSOR]
+
+    probs = classifier.predict_proba(X_fleet_classifier)[:, 1]
+    wear = regressor.predict(X_fleet_regressor)
+    statuses = mls.calculate_statuses(probs, wear)
+
+    # Mirror sampling logic: 5 Critical, 3 Warning, 2 Normal
     np.random.seed(42 + current_user.id)
-    sample_indices = np.random.choice(user_indices, min(len(user_indices), 10), replace=False)
-    
-    X_classifier = df_scaled_all.iloc[sample_indices][mls.FEATURE_COLS_CLASSIFIER]
-    predictions = classifier.predict_proba(X_classifier)[:, 1]
-    
+    crit_idx = np.where(statuses == 'CRITICAL')[0]
+    warn_idx = np.where(statuses == 'WARNING')[0]
+    norm_idx = np.where(statuses == 'NORMAL')[0]
+
+    s_crit = np.random.choice(crit_idx, min(5, len(crit_idx)), replace=False) if len(crit_idx) > 0 else []
+    s_warn = np.random.choice(warn_idx, min(3, len(warn_idx)), replace=False) if len(warn_idx) > 0 else []
+    s_norm = np.random.choice(norm_idx, min(2, len(norm_idx)), replace=False) if len(norm_idx) > 0 else []
+
+    sample_indices = np.concatenate([s_crit, s_warn, s_norm]).astype(int)
+
     return jsonify({
         'total_machines': len(sample_indices),
-        'critical_count': int((predictions >= 0.75).sum()),
-        'warning_count': int(((predictions >= 0.50) & (predictions < 0.75)).sum()),
-        'normal_count': int((predictions < 0.50).sum()),
-        'average_failure_risk': round(float(predictions.mean()) * 100, 2),
-        'max_failure_risk': round(float(predictions.max()) * 100, 2),
+        'critical_count': len(s_crit),
+        'warning_count': len(s_warn),
+        'normal_count': len(s_norm),
+        'average_failure_risk': round(float(probs[sample_indices].mean()) * 100, 2) if len(sample_indices) > 0 else 0,
+        'max_failure_risk': round(float(probs[sample_indices].max()) * 100, 2) if len(sample_indices) > 0 else 0,
         'timestamp': datetime.now().isoformat()
-    })
-
-@api_bp.route('/model-calibration')
+    })@api_bp.route('/model-calibration')
 @login_required
 @plan_required('Enterprise')
 def model_calibration():

@@ -121,16 +121,17 @@ def payment_success():
     """Payment success callback"""
     payment_ref = request.args.get('reference') or session.get('payment_ref')
     if payment_ref:
-        transaction = Transaction.query.filter_by(reference=payment_ref).first()
+        # SECURE: Verify that this transaction exists AND belongs to the current user
+        transaction = Transaction.query.filter_by(reference=payment_ref, user_id=current_user.id).first()
         if transaction and transaction.status != 'Completed':
             transaction.status = 'Completed'
             current_user.subscription_plan = transaction.plan_name.capitalize()
             db.session.commit()
             flash(f'Plan upgraded to {transaction.plan_name.capitalize()}!', 'success')
-    
-    plan = session.get('plan', 'Unknown')
-    email = session.get('email', current_user.email)
-    return render_template('payment_success.html', reference=payment_ref, plan=plan, email=email)
+        elif not transaction:
+            # Log suspicious attempt if reference exists but doesn't belong to user
+            print(f"SECURITY ALERT: Unauthorized access attempt to payment ref {payment_ref} by user {current_user.id}")
+            return render_template('error.html', message='Unauthorized payment reference'), 403
 
 @payments_bp.route('/failure')
 def payment_failure():

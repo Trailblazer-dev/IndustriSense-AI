@@ -1,6 +1,7 @@
 {
   "model_type": "XGBoost Wear Regressor (RUL Proxy)",
-  "last_trained": "2026-03-16T09:40:12.040044",
+  "training_approach": "80/20 holdout split",
+  "max_tool_wear_minutes": 254,
   "hyperparameters": {
     "objective": "reg:squarederror",
     "max_depth": 6,
@@ -11,12 +12,12 @@
     "random_state": 42
   },
   "test_performance": {
-    "mae": 51.106926587104795,
-    "rmse": 61.84448331217136,
-    "r2": 0.10413335838898441,
-    "test_samples": 2000
+    "mae": 51.30975129795075,
+    "rmse": 61.86137607493309,
+    "r2": 0.10364388127784496,
+    "test_set_size": 2000
   },
-  "features": [
+  "features_original": [
     "Air temperature [K]",
     "Process temperature [K]",
     "Rotational speed [rpm]",
@@ -34,6 +35,7 @@
     "Speed_x_Torque": "Speed_x_Torque",
     "is_anomaly": "is_anomaly"
   },
-  "sha256": "c0867983f13549f396313eb5bfd625f64e20f2774ffe27fa513c6ef76b0dcf27",
+  "target_original": "Tool wear [min]",
+  "target_safe": "Tool_wear_min_",
   "rul_conversion": "RUL = 254 - Predicted_Wear (minutes)"
 }

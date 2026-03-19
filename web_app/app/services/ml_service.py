@@ -177,3 +177,25 @@ def get_user_machines(df, user_id):
     user_df = df.iloc[start_idx : start_idx + num_machines].copy()
     user_df['original_index'] = user_df.index
     return user_df
+
+def calculate_statuses(failure_probs, predicted_wear):
+    """
+    Standardized logic to determine machine status.
+    failure_probs: array of probabilities (0.0 to 1.0)
+    predicted_wear: array of wear values (minutes)
+    """
+    # Convert probabilities to percentage for threshold comparison
+    probs_pct = failure_probs * 100
+    
+    statuses = np.full(len(failure_probs), 'NORMAL', dtype='U10')
+    
+    # CRITICAL: wear >= 200 OR prob >= 75%
+    critical_mask = (predicted_wear >= 200) | (probs_pct >= 75)
+    # WARNING: wear >= 150 OR prob >= 50%
+    warning_mask = (predicted_wear >= 150) | (probs_pct >= 50)
+    
+    # Apply masks (critical takes precedence)
+    statuses[warning_mask] = 'WARNING'
+    statuses[critical_mask] = 'CRITICAL'
+    
+    return statuses
