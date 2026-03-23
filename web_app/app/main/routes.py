@@ -1,12 +1,15 @@
-from flask import render_template, redirect, url_for, current_app
+from flask import render_template, redirect, url_for, current_app, request, jsonify, flash
 from flask_login import login_required, current_user
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
+import json
 import pandas as pd
 from app.main import main_bp
-from app.utils import plan_required
+from app.utils import plan_required, role_required
 from app.services import ml_service as mls
+from app.extensions import db
+from app.models import ReportArchive
 
 @main_bp.route('/')
 def index():
@@ -18,69 +21,188 @@ def index():
 @main_bp.route('/dashboard')
 @login_required
 def dashboard():
-    """Fleet Monitor - User specific overview"""
-    data_dict = mls.get_data()
-    df_raw_all = data_dict['raw']
-    df_scaled_all = data_dict['scaled']
+    """Fleet Monitor - Focus on a 10-machine sample with consistent stats"""
+    analysis = mls.perform_fleet_analysis(current_user.id)
+    if not analysis:
+        return render_template('error.html', message='Critical failure: Unable to perform fleet inference.'), 500
     
-    if df_raw_all is None or df_scaled_all is None:
-        return render_template('error.html', message='Data not loaded'), 500
-    
-    df_raw_local = mls.get_user_machines(df_raw_all, current_user.id)
-    user_indices = df_raw_local['original_index'].values
-    df_scaled_local = df_scaled_all.iloc[user_indices]
-    
-    classifier, regressor = mls.get_models()
-    if classifier is None or regressor is None:
-        return render_template('error.html', message='Models not loaded'), 500
+    return render_template('dashboard.html', 
+                           machines=analysis['monitored_sample'], 
+                           status_counts=analysis['sample_stats'])
 
-    X_all_classifier = df_scaled_local[mls.FEATURE_COLS_CLASSIFIER]
-    X_all_regressor = df_raw_local[mls.FEATURE_COLS_REGRESSOR]
+@main_bp.route('/reports')
+@login_required
+@plan_required('Operational Base')
+def reports():
+    """Operational Audit Report Page matching Dashboard 10-machine view"""
+    analysis = mls.perform_fleet_analysis(current_user.id)
+    if not analysis:
+        return render_template('error.html', message='Critical failure: Report engine offline.'), 500
     
-    all_failure_probs = classifier.predict_proba(X_all_classifier)[:, 1]
-    all_predicted_wear = regressor.predict(X_all_regressor)
+    # Identify non-Normal machines from the monitored 10 for the Action List
+    at_risk_machines = [m for m in analysis['monitored_sample'] if m['status'] != 'NORMAL']
+
+    # 1. Financials (Nexus Only)
+    financials = None
+    if current_user.subscription_plan == 'Industrial Nexus':
+        prev_failures = int(analysis['fleet_stats']['critical'] * 0.85)
+        savings = prev_failures * 3500
+        financials = {
+            'prevented': prev_failures, 
+            'savings': f"{savings:,}", 
+            'roi': round(savings / 1999, 1)
+        }
+
+    # 2. Industry Context (Based on user setting or session)
+    user_industry = request.args.get('industry') or getattr(current_user, 'industry', 'General Manufacturing')
+
+    return render_template('reports.html', 
+                           stats=analysis['sample_stats'],
+                           monitored_assets=analysis['monitored_sample'],
+                           at_risk_list=at_risk_machines,
+                           report_date=datetime.now().strftime('%B %d, %Y'),
+                           financials=financials,
+                           industry=user_industry)
+
+@main_bp.route('/reports/save', methods=['POST'])
+@login_required
+@plan_required('Production Pro')
+@role_required(['Plant Manager', 'System Administrator'])
+def save_report():
+    """Archive current report state (10 machines) with industry metadata"""
+    try:
+        analysis = mls.perform_fleet_analysis(current_user.id)
+        if not analysis:
+            flash('Failed to generate report for archiving.', 'error')
+            return redirect(url_for('main.reports'))
+            
+        summary = analysis['sample_stats']
+        at_risk_machines = [m for m in analysis['monitored_sample'] if m['status'] != 'NORMAL']
+        
+        # Determine Industry from request or user profile
+        report_industry = request.form.get('industry') or "General Manufacturing"
+
+        if current_user.subscription_plan == 'Industrial Nexus':
+            prev_failures = int(analysis['fleet_stats']['critical'] * 0.85)
+            summary['financial_impact'] = {
+                'prevented_failures': prev_failures,
+                'estimated_savings': prev_failures * 3500,
+                'roi': round((prev_failures * 3500) / 1999, 1)
+            }
+        
+        new_report = ReportArchive(
+            user_id=current_user.id,
+            report_title=f"Audit_{datetime.now().strftime('%Y%m%d_%H%M')}",
+            industry=report_industry,
+            summary_stats=summary,
+            critical_assets=at_risk_machines
+        )
+        db.session.add(new_report)
+        db.session.commit()
+        
+        flash(f'Operational Audit for {report_industry} successfully archived.', 'success')
+        return redirect(url_for('main.reports_archive'))
+    except Exception as e:
+        print(f"Error saving report: {e}")
+        flash('Failed to save report. Please contact system admin.', 'error')
+        return redirect(url_for('main.reports'))
+
+@main_bp.route('/reports/archive')
+@login_required
+@plan_required('Production Pro')
+@role_required(['Plant Manager', 'Reliability Engineer', 'System Administrator'])
+def reports_archive():
+    """Historical Report Browser with Filtering"""
+    industry_filter = request.args.get('industry')
     
-    # Use centralized status calculation
-    statuses = mls.calculate_statuses(all_failure_probs, all_predicted_wear)
+    query = ReportArchive.query.filter_by(user_id=current_user.id)
+    if industry_filter and industry_filter != 'All':
+        query = query.filter_by(industry=industry_filter)
+        
+    archives = query.order_by(ReportArchive.created_at.desc()).all()
     
-    # Stratified Sampling for dashboard from user's machines
-    np.random.seed(42 + current_user.id)
-    critical_indices = np.where(statuses == 'CRITICAL')[0]
-    warning_indices = np.where(statuses == 'WARNING')[0]
-    normal_indices = np.where(statuses == 'NORMAL')[0]
+    # Get unique industries for filter dropdown
+    industries = db.session.query(ReportArchive.industry).filter_by(user_id=current_user.id).distinct().all()
+    industry_list = [i[0] for i in industries if i[0]]
     
-    sample_critical = np.random.choice(critical_indices, min(5, len(critical_indices)), replace=False) if len(critical_indices) > 0 else []
-    sample_warning = np.random.choice(warning_indices, min(3, len(warning_indices)), replace=False) if len(warning_indices) > 0 else []
-    sample_normal = np.random.choice(normal_indices, min(2, len(normal_indices)), replace=False) if len(normal_indices) > 0 else []
+    return render_template('reports_archive.html', archives=archives, industries=industry_list, current_filter=industry_filter)
+
+@main_bp.route('/reports/download/<int:report_id>')
+@login_required
+@plan_required('Production Pro')
+@role_required(['Plant Manager', 'Reliability Engineer', 'System Administrator'])
+def download_report(report_id):
+    """Generate Industry-aware CSV Download"""
+    report = ReportArchive.query.get_or_404(report_id)
+    if report.user_id != current_user.id:
+        return "Unauthorized", 403
+        
+    # Create CSV data
+    import io
+    import csv
+    output = io.StringIO()
+    writer = csv.writer(output)
     
-    sample_local_indices = np.concatenate([sample_critical, sample_warning, sample_normal]).astype(int)
+    # Metadata Header
+    writer.writerow(['IndustriSense AI - Audit Report'])
+    writer.writerow(['Title', report.report_title])
+    writer.writerow(['Industry', report.industry])
+    writer.writerow(['Date', report.created_at.strftime('%Y-%m-%d %H:%M')])
+    writer.writerow([])
     
-    machines = []
-    max_wear_threshold = current_app.config.get('MAX_TOOL_WEAR', 254)
+    # Summary Section
+    writer.writerow(['EXECUTIVE SUMMARY'])
+    writer.writerow(['Health Score', f"{report.summary_stats['health']}%"])
+    writer.writerow(['Total Monitored', report.summary_stats['total']])
+    writer.writerow(['At Risk', report.summary_stats['at_risk']])
+    writer.writerow([])
     
-    for local_idx in sample_local_indices:
-        original_idx = user_indices[local_idx]
-        machines.append({
-            'id': int(original_idx),
-            'failure_risk': round(all_failure_probs[local_idx] * 100, 1),
-            'predicted_tool_wear': round(all_predicted_wear[local_idx], 1),
-            'predicted_rul': max(0, max_wear_threshold - int(all_predicted_wear[local_idx])),
-            'status': statuses[local_idx],
-            'timestamp': datetime.now().isoformat()
-        })
+    # Assets Section
+    writer.writerow(['CRITICAL ASSETS & ACTIONS'])
+    writer.writerow(['Machine ID', 'Risk %', 'RUL (min)', 'Reason', 'Required Action'])
+    for asset in report.critical_assets:
+        writer.writerow([
+            asset['id'], 
+            asset['failure_risk'], 
+            asset['predicted_rul'], 
+            asset['reason'], 
+            asset['action']
+        ])
     
-    status_counts = {
-        'total': len(machines),
-        'critical': sum(1 for m in machines if m['status'] == 'CRITICAL'),
-        'warning': sum(1 for m in machines if m['status'] == 'WARNING'),
-        'normal': sum(1 for m in machines if m['status'] == 'NORMAL')
-    }
+    from flask import Response
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-disposition": f"attachment; filename={report.report_title}_{report.industry}.csv"}
+    )
+
+@main_bp.route('/reports/archive/<int:report_id>')
+@login_required
+@plan_required('Production Pro')
+@role_required(['Plant Manager', 'Reliability Engineer', 'System Administrator'])
+def view_report_detail(report_id):
+    """View a specific archived report in the professional layout"""
+    report = ReportArchive.query.get_or_404(report_id)
+    if report.user_id != current_user.id:
+        flash('Unauthorized access to report.', 'error')
+        return redirect(url_for('main.reports_archive'))
     
-    return render_template('dashboard.html', machines=machines, status_counts=status_counts)
+    # Format the data to match what reports.html expects
+    # Note: Archive only saves critical assets, so monitored_assets will be limited to those
+    return render_template('reports.html', 
+                           stats=report.summary_stats,
+                           monitored_assets=report.critical_assets, # Fallback to critical only for archive
+                           at_risk_list=report.critical_assets,
+                           report_date=report.created_at.strftime('%B %d, %Y'),
+                           financials=report.summary_stats.get('financial_impact'),
+                           industry=report.industry,
+                           is_archive=True,
+                           report_id=report_id)
 
 @main_bp.route('/analytics')
 @login_required
-@plan_required('Starter')
+@plan_required('Production Pro')
+@role_required(['Reliability Engineer', 'System Administrator'])
 def analytics():
     """Analytics Page"""
     model_dir = current_app.config['MODEL_DIR']
@@ -101,12 +223,15 @@ def analytics():
 
 @main_bp.route('/predict')
 @login_required
-@plan_required('Professional')
+@plan_required('Production Pro')
+@role_required(['Reliability Engineer', 'System Administrator'])
 def predict_interface():
     """Prediction interface"""
     return render_template('predict.html', feature_names=mls.FEATURE_COLS_CLASSIFIER)
 
 @main_bp.route('/models')
+@login_required
+@role_required(['Reliability Engineer', 'System Administrator'])
 def models_page():
     """Technical Specifications"""
     model_dir = current_app.config['MODEL_DIR']

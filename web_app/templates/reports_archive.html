@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Report Archive - IndustriSense AI{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-5 border-bottom pb-4">
+        <div>
+            <h1 class="page-title mb-1">Fleet Audit History</h1>
+            <p class="text-muted mb-0">Browse and filter your archived operational reports</p>
+        </div>
+        <div class="text-end">
+            <a href="{{ url_for('main.reports') }}" class="btn btn-outline-primary btn-sm px-4 shadow-sm">
+                <i class="fas fa-file-plus me-2"></i>New Audit
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="stat-card p-3 mb-5 border-0 shadow-sm bg-white">
+        <form method="GET" class="row g-3 align-items-center">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0"><i class="fas fa-industry text-muted"></i></span>
+                    <select name="industry" class="form-select border-start-0" onchange="this.form.submit()">
+                        <option value="All">All Industries</option>
+                        {% for ind in industries %}
+                        <option value="{{ ind }}" {% if current_filter == ind %}selected{% endif %}>{{ ind }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                {% if current_filter and current_filter != 'All' %}
+                <a href="{{ url_for('main.reports_archive') }}" class="btn btn-link btn-sm text-decoration-none text-muted">
+                    <i class="fas fa-times me-1"></i>Clear Filter
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Archive List -->
+    <div class="row g-4">
+        {% if archives %}
+            {% for report in archives %}
+            <div class="col-md-6 col-xl-4">
+                <div class="stat-card h-100 p-4 border-0 shadow-sm bg-white transition-hover position-relative">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <span class="badge bg-accent bg-opacity-10 text-accent mb-2 extra-small">{{ report.industry }}</span>
+                            <h5 class="fw-bold mb-1">{{ report.report_title }}</h5>
+                            <p class="extra-small text-muted mb-0">
+                                <i class="far fa-calendar-alt me-1"></i>{{ report.created_at.strftime('%B %d, %Y | %H:%M') }}
+                            </p>
+                        </div>
+                        <div class="text-end">
+                            <div class="h4 fw-bold text-primary mb-0">{{ report.summary_stats.health }}%</div>
+                            <div class="extra-small text-muted">Health</div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-light rounded-3 mb-4">
+                        <div class="row text-center">
+                            <div class="col-6 border-end">
+                                <div class="extra-small text-muted text-uppercase">At Risk</div>
+                                <div class="fw-bold text-warning">{{ report.summary_stats.at_risk }}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="extra-small text-muted text-uppercase">Critical</div>
+                                <div class="fw-bold text-danger">{{ report.critical_assets|length }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-auto">
+                        <a href="{{ url_for('main.view_report_detail', report_id=report.id) }}" class="btn btn-primary btn-sm flex-grow-1">
+                            <i class="fas fa-file-alt me-2"></i>View Report
+                        </a>
+                        <div class="dropdown">
+                            <button class="btn btn-light btn-sm border dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                <li><a class="dropdown-item small" href="{{ url_for('main.download_report', report_id=report.id) }}"><i class="fas fa-download me-2 opacity-50"></i>Export CSV</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><button class="dropdown-item small text-muted" onclick="window.print()"><i class="fas fa-print me-2 opacity-50"></i>Quick Print Cards</button></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <div class="stat-card p-5 border-0 shadow-sm bg-white d-inline-block">
+                    <i class="fas fa-archive fs-1 mb-3 text-muted opacity-25"></i>
+                    <h5>No reports found</h5>
+                    <p class="text-muted small">Try adjusting your filters or generate a new audit report.</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

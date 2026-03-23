@@ -52,11 +52,7 @@ def create_app(config_name='default'):
     from app.payments import payments_bp
     app.register_blueprint(payments_bp)
 
-    # Create tables
     with app.app_context():
         db.create_all()
 
     return app
-
-# Instantiate the application for production deployment (Gunicorn looks for 'app' in 'app')
-app = create_app(os.environ.get('FLASK_ENV', 'production'))

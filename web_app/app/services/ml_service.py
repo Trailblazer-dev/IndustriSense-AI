@@ -199,3 +199,106 @@ def calculate_statuses(failure_probs, predicted_wear):
     statuses[critical_mask] = 'CRITICAL'
     
     return statuses
+
+def perform_fleet_analysis(user_id):
+    """
+    Centralized high-performance inference engine for user fleets.
+    Returns full stats, sampled dashboard assets, and prioritized critical lists.
+    """
+    data_dict = get_data()
+    df_raw_all = data_dict['raw']
+    df_scaled_all = data_dict['scaled']
+    
+    if df_raw_all is None or df_scaled_all is None:
+        return None
+        
+    df_raw_local = get_user_machines(df_raw_all, user_id)
+    user_indices = df_raw_local['original_index'].values
+    df_scaled_local = df_scaled_all.iloc[user_indices]
+    
+    classifier, regressor = get_models()
+    if classifier is None or regressor is None:
+        return None
+
+    # Vectorized Inference
+    X_clf = df_scaled_local[FEATURE_COLS_CLASSIFIER]
+    X_reg = df_raw_local[FEATURE_COLS_REGRESSOR]
+    
+    probs = classifier.predict_proba(X_clf)[:, 1]
+    wear = regressor.predict(X_reg)
+    statuses = calculate_statuses(probs, wear)
+    
+    # 1. Fleet-wide Statistics (Background Monitoring)
+    total_fleet = len(user_indices)
+    fleet_crit_count = int(np.sum(statuses == 'CRITICAL'))
+    fleet_warn_count = int(np.sum(statuses == 'WARNING'))
+    fleet_avg_risk = float(np.mean(probs) * 100)
+    
+    # 2. Deterministic Prioritization for Dashboard/Report (The "Monitored 10")
+    # We pick the Top 5 Critical, Top 3 Warning, and Top 2 Normal machines by risk probability.
+    crit_indices = np.where(statuses == 'CRITICAL')[0]
+    warn_indices = np.where(statuses == 'WARNING')[0]
+    norm_indices = np.where(statuses == 'NORMAL')[0]
+    
+    # Deterministic sort: highest probability first, then by original index for stability
+    s_crit = crit_indices[np.argsort(probs[crit_indices])][::-1][:5]
+    s_warn = warn_indices[np.argsort(probs[warn_indices])][::-1][:3]
+    s_norm = norm_indices[np.argsort(probs[norm_indices])][::-1][:2]
+    
+    sample_local_indices = np.concatenate([s_crit, s_warn, s_norm]).astype(int)
+    
+    max_wear = current_app.config.get('MAX_TOOL_WEAR', 254)
+    timestamp = datetime.now().isoformat()
+    
+    # Consistent Action & Reason mapping for monitored assets
+    def get_recommendation(status, risk, tool_wear):
+        if status == 'CRITICAL':
+            reason = 'Extreme Failure Risk' if risk >= 75 else 'Tool Wear Critical'
+            action = 'IMMEDIATE SHUTDOWN'
+        elif status == 'WARNING':
+            reason = 'High Operating Stress' if risk >= 50 else 'Tool Wear Warning'
+            action = 'SCHEDULE INSPECTION'
+        else:
+            reason = 'Optimal Operation'
+            action = 'ROUTINE DUTY'
+        return reason, action
+
+    monitored_sample = []
+    for l_idx in sample_local_indices:
+        risk_pct = round(float(probs[l_idx] * 100), 1)
+        wear_min = round(float(wear[l_idx]), 1)
+        status = statuses[l_idx]
+        reason, action = get_recommendation(status, risk_pct, wear_min)
+        
+        monitored_sample.append({
+            'id': int(user_indices[l_idx]),
+            'failure_risk': risk_pct,
+            'predicted_tool_wear': wear_min,
+            'predicted_rul': max(0, max_wear - int(wear[l_idx])),
+            'status': status,
+            'reason': reason,
+            'action': action,
+            'timestamp': timestamp
+        })
+        
+    # 3. Sample Statistics (For UI Consistency with the 10-machine view)
+    sample_stats = {
+        'total': len(monitored_sample),
+        'critical': int(np.sum([1 for m in monitored_sample if m['status'] == 'CRITICAL'])),
+        'warning': int(np.sum([1 for m in monitored_sample if m['status'] == 'WARNING'])),
+        'normal': int(np.sum([1 for m in monitored_sample if m['status'] == 'NORMAL'])),
+        'at_risk': int(np.sum([1 for m in monitored_sample if m['status'] != 'NORMAL'])),
+        'avg_risk': round(float(np.mean([m['failure_risk'] for m in monitored_sample])), 1) if monitored_sample else 0,
+        'health': round(float(100 - np.mean([m['failure_risk'] for m in monitored_sample])), 1) if monitored_sample else 100
+    }
+
+    return {
+        'fleet_stats': {
+            'total': total_fleet,
+            'critical': fleet_crit_count,
+            'warning': fleet_warn_count,
+            'health': round(100 - fleet_avg_risk, 1)
+        },
+        'sample_stats': sample_stats,
+        'monitored_sample': monitored_sample
+    }

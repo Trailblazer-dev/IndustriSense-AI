@@ -74,7 +74,7 @@
 
             <!-- Checkout Form -->
             <div class="checkout-form-section">
-                <form id="checkoutForm" onsubmit="processPayment(event)" class="checkout-form">
+                <form id="checkoutForm" onsubmit="handleCheckoutSubmit(event)" class="checkout-form">
                     <!-- Personal Information -->
                     <fieldset class="form-section">
                         <legend class="section-header">Personal Information</legend>
@@ -164,13 +164,13 @@
                     </fieldset>
 
                     <!-- Error Message -->
-                    <div id="errorMessage" class="alert alert-error d-none" role="alert">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <span id="errorText"></span>
+                    <div id="statusNotificationBox" class="status-msg-box d-none" role="status">
+                        <i class="fas fa-info-circle"></i>
+                        <span id="statusNotificationText"></span>
                     </div>
 
                     <!-- Submit Button -->
-                    <button type="submit" class="submit-button" id="submitBtn">
+                    <button type="submit" class="submit-button" id="paymentSubmitButton">
                         <i class="fas fa-lock"></i>
                         Proceed to Payment
                     </button>
@@ -550,6 +550,23 @@
         gap: 0.5rem;
     }
 
+    /* Status Message Box */
+    .status-msg-box {
+        background: #fff5f5;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 1rem;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .status-msg-box i {
+        flex-shrink: 0;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
         .checkout-grid {
@@ -579,16 +596,38 @@
         }
     }
 </style>
-async function processPayment(event) {
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function handleCheckoutSubmit(event) {
     event.preventDefault();
     
     const form = document.getElementById('checkoutForm');
-    const submitBtn = document.getElementById('submitBtn');
-    const errorDiv = document.getElementById('errorMessage');
+    const submitBtn = document.getElementById('paymentSubmitButton');
+    const errorDiv = document.getElementById('statusNotificationBox');
+    const errorText = document.getElementById('statusNotificationText');
     
-    // Disable submit button
+    if (!submitBtn || !errorDiv || !errorText) {
+        console.error('Critical UI elements missing:', 
+            !submitBtn ? 'paymentSubmitButton' : '', 
+            !errorDiv ? 'statusNotificationBox' : '',
+            !errorText ? 'statusNotificationText' : '');
+        
+        if (form) {
+            console.log('Form content at failure:', form.innerHTML);
+        } else {
+            console.error('Form itself is missing!');
+        }
+        return;
+    }
+
+    // UI: Enter Loading State
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Awaiting PIN Entry...';
+    
+    // Clear previous errors
+    errorDiv.classList.add('d-none');
 
     try {
         const formData = new FormData(form);
@@ -615,22 +654,62 @@ async function processPayment(event) {
         const data = await response.json();
 
         if (data.status === 'success') {
-            // Redirect to PayHero payment page
-            window.location.href = data.payment_url;
+            // STK Push triggered! Show instruction and start polling
+            if (window.IndustriSense) {
+                IndustriSense.showFeedback('M-Pesa prompt sent to +254' + payload.phone + '. Please enter your PIN.', 'info');
+            }
+            
+            const reference = data.reference;
+            startStatusPolling(reference);
         } else {
-            // Show error
-            errorDiv.classList.remove('d-none');
-            document.getElementById('errorText').textContent = data.message || 'Payment processing failed';
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-lock me-2"></i>Proceed to Payment (${{ plan.price }}.00)';
+            throw new Error(data.message || 'Payment initiation failed');
         }
     } catch (error) {
-        console.error('Error:', error);
         errorDiv.classList.remove('d-none');
-        document.getElementById('errorText').textContent = 'An error occurred. Please try again.';
+        errorText.textContent = error.message;
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-lock me-2"></i>Proceed to Payment (${{ plan.price }}.00)';
     }
+}
+
+function startStatusPolling(reference) {
+    const errorDiv = document.getElementById('statusNotificationBox');
+    const errorText = document.getElementById('statusNotificationText');
+    const submitBtn = document.getElementById('paymentSubmitButton');
+
+    const pollInterval = setInterval(async () => {
+        try {
+            const response = await fetch('/payment/verify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ reference: reference })
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success' && (result.payment_status === 'Completed' || result.payment_status === 'Success')) {
+                clearInterval(pollInterval);
+                window.location.href = '/payment/success?reference=' + reference;
+            }
+        } catch (e) {
+            console.error('Polling error:', e);
+        }
+    }, 5000);
+
+    setTimeout(() => {
+        clearInterval(pollInterval);
+        if (submitBtn && submitBtn.disabled) {
+            if (errorDiv && errorText) {
+                errorDiv.classList.remove('d-none');
+                errorText.textContent = 'Payment verification timed out. Please check your M-Pesa messages.';
+            }
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-lock me-2"></i>Retry Payment';
+        }
+    }, 120000);
 }
 </script>
 {% endblock %}

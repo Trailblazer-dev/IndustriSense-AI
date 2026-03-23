@@ -1,38 +1,84 @@
 from flask import render_template, request, jsonify, session, flash, current_app
 from flask_login import login_required, current_user
 import requests
-from app.extensions import db
-from app.models import Transaction
+import base64
+import time
+from app.extensions import db, csrf
+from app.models import Transaction, User
 from app.payments import payments_bp
+
+def get_payhero_auth():
+    """
+    Construct the Basic Auth header value based on available configuration.
+    Prioritizes Basic_Auth_Token if correctly formatted, falls back to Username:Password.
+    """
+    token = current_app.config.get('PAYHERO_AUTH_TOKEN')
+    username = current_app.config.get('PAYHERO_USERNAME')
+    password = current_app.config.get('PAYHERO_API_PASSWORD')
+    
+    if token and token.strip():
+        if token.strip().startswith('Basic '):
+            return token.strip()
+        return f"Basic {token.strip()}"
+    
+    if username and password:
+        auth_str = f"{username.strip()}:{password.strip()}"
+        encoded = base64.b64encode(auth_str.encode()).decode()
+        return f"Basic {encoded}"
+    
+    return None
 
 @payments_bp.route('/plans')
 def plans():
-    """Pricing and plans page - Public"""
+    """Industrial ROI Optimized Pricing"""
     plans_data = [
         {
-            'name': 'Starter',
-            'price': 29,
-            'period': 'month',
-            'description': 'Perfect for small operations',
-            'features': ['Up to 5 machines', 'Basic predictive maintenance', 'Weekly reports', 'Email support', 'Dashboard access'],
-            'highlighted': False,
-            'btn_text': 'Choose Plan'
-        },
-        {
-            'name': 'Professional',
-            'price': 99,
-            'period': 'month',
-            'description': 'For growing businesses',
-            'features': ['Up to 50 machines', 'Advanced ML analytics', 'Daily reports', 'Priority support', 'API access', 'Custom alerts', 'Data export'],
-            'highlighted': True,
-            'btn_text': 'Get Started'
-        },
-        {
-            'name': 'Enterprise',
+            'name': 'Operational Base',
+            'id': 'essential',
             'price': 299,
             'period': 'month',
-            'description': 'For large-scale operations',
-            'features': ['Unlimited machines', 'Real-time predictions', 'Hourly reports', '24/7 phone support', 'Advanced API', 'Custom integration', 'Dedicated account manager'],
+            'description': 'Core failure detection for specialized production lines.',
+            'features': [
+                'Monitoring for up to 10 machines',
+                'Real-time Critical Failure Alerts',
+                'Basic XAI (Explainable AI) Reports',
+                'Standard Email Support',
+                'Digital Health Dashboard'
+            ],
+            'highlighted': False,
+            'btn_text': 'Select Base'
+        },
+        {
+            'name': 'Production Pro',
+            'id': 'pro',
+            'price': 999,
+            'period': 'month',
+            'description': 'Advanced prognosis to eliminate unplanned downtime.',
+            'features': [
+                'Fleet monitoring (up to 50 machines)',
+                'RUL (Remaining Useful Life) Forecasting',
+                'Predictive Maintenance Scheduling',
+                'High-Priority SMS/Phone Alerts',
+                'Quarterly ROI Impact Analysis',
+                'API Data Integration'
+            ],
+            'highlighted': True,
+            'btn_text': 'Go Pro'
+        },
+        {
+            'name': 'Industrial Nexus',
+            'id': 'enterprise',
+            'price': 1999,
+            'period': 'month',
+            'description': 'Enterprise-wide autonomous equipment intelligence.',
+            'features': [
+                'Unlimited Machine Integration',
+                'Custom ML Model Fine-Tuning',
+                'Full SCADA/PLC Bi-directional Sync',
+                '24/7/365 On-Call IoT Engineer',
+                'On-site Implementation & Training',
+                'White-label Executive Reporting'
+            ],
             'highlighted': False,
             'btn_text': 'Contact Sales'
         }
@@ -42,11 +88,11 @@ def plans():
 @payments_bp.route('/checkout/<plan_name>')
 @login_required
 def checkout(plan_name):
-    """Checkout page for payment"""
+    """Mapped to Industrial Tiers"""
     plan_mapping = {
-        'starter': {'name': 'Starter', 'price': 29, 'plan_id': 'starter_plan'},
-        'professional': {'name': 'Professional', 'price': 99, 'plan_id': 'pro_plan'},
-        'enterprise': {'name': 'Enterprise', 'price': 299, 'plan_id': 'enterprise_plan'}
+        'essential': {'name': 'Operational Base', 'price': 299, 'plan_id': 'essential_plan'},
+        'pro': {'name': 'Production Pro', 'price': 999, 'plan_id': 'pro_plan'},
+        'enterprise': {'name': 'Industrial Nexus', 'price': 1999, 'plan_id': 'enterprise_plan'}
     }
     plan = plan_mapping.get(plan_name.lower())
     if not plan:
@@ -56,110 +102,146 @@ def checkout(plan_name):
 @payments_bp.route('/process', methods=['POST'])
 @login_required
 def process_payment():
-    """Process payment with PayHero"""
+    """Processing with Industrial Value amounts"""
     try:
         data = request.json
         plan_name = data.get('plan')
-        email = data.get('email') or current_user.email
         phone = data.get('phone')
         
-        if not all([plan_name, email, phone]):
-            return jsonify({'status': 'error', 'message': 'Missing required fields'}), 400
+        if not all([plan_name, phone]):
+            return jsonify({'status': 'error', 'message': 'Missing fields'}), 400
         
+        formatted_phone = phone.replace('+254', '0').replace('254', '0')
+        if formatted_phone.startswith('7') or formatted_phone.startswith('1'):
+            formatted_phone = '0' + formatted_phone
+
+        # PayHero KES Conversion (Approx $1 = 100 KES for STK testing)
         plans = {
-            'starter': {'amount': 2900, 'currency': 'KES'},
-            'professional': {'amount': 9900, 'currency': 'KES'},
-            'enterprise': {'amount': 29900, 'currency': 'KES'}
+            'essential_plan': {'amount': 29900, 'name': 'Operational Base'},
+            'pro_plan': {'amount': 99900, 'name': 'Production Pro'},
+            'enterprise_plan': {'amount': 199900, 'name': 'Industrial Nexus'}
         }
         
         plan_data = plans.get(plan_name.lower())
         if not plan_data:
             return jsonify({'status': 'error', 'message': 'Invalid plan'}), 400
         
-        payhero_api_key = current_app.config['PAYHERO_API_KEY']
-        api_url = 'https://api.payhero.io/api/v2/payments'
-        if current_app.config['PAYHERO_SANDBOX']:
-            api_url = 'https://sandbox.payhero.io/api/v2/payments'
+        auth_header = get_payhero_auth()
+        if not auth_header:
+            return jsonify({'status': 'error', 'message': 'Auth not configured'}), 500
+
+        api_url = 'https://backend.payhero.co.ke/api/v2/payments'
+        base_url = request.url_root.rstrip('/')
+        callback_url = f"{base_url}/payment/callback"
         
+        external_ref = f"IND_{current_user.id}_{int(time.time())}"
         payload = {
             'amount': plan_data['amount'],
-            'currency': plan_data['currency'],
-            'email': email,
-            'phone_number': phone,
-            'first_name': data.get('first_name', 'Customer'),
-            'last_name': data.get('last_name', ''),
-            'description': f'IndustriSense AI {plan_name.capitalize()} Plan',
-            'callback_url': current_app.config['PAYMENT_SUCCESS_URL'],
-            'error_callback_url': current_app.config['PAYMENT_FAIL_URL']
+            'phone_number': formatted_phone,
+            'channel_id': current_app.config['PAYHERO_CHANNEL_ID'],
+            'provider': "m-pesa",
+            'external_reference': external_ref,
+            'callback_url': callback_url,
         }
         
-        headers = {'Authorization': f'Bearer {payhero_api_key}', 'Content-Type': 'application/json'}
-        response = requests.post(api_url, json=payload, headers=headers, timeout=10)
+        headers = {
+            'Authorization': auth_header,
+            'Content-Type': 'application/json'
+        }
+        
+        response = requests.post(api_url, json=payload, headers=headers, timeout=15)
         
         if response.status_code in [200, 201]:
-            result = response.json()
-            ref = result.get('id', result.get('reference'))
-            
-            transaction = Transaction(user_id=current_user.id, reference=ref, amount=plan_data['amount'] / 100, plan_name=plan_name)
+            transaction = Transaction(
+                user_id=current_user.id, 
+                reference=external_ref, 
+                amount=plan_data['amount'], 
+                plan_name=plan_data['name']
+            )
             db.session.add(transaction)
             db.session.commit()
             
-            session['payment_ref'] = ref
-            session['plan'] = plan_name
-            session['email'] = email
+            session['payment_ref'] = external_ref
             
-            return jsonify({'status': 'success', 'payment_url': result.get('payment_url', result.get('checkout_url')), 'reference': ref}), 200
+            return jsonify({
+                'status': 'success', 
+                'message': 'Industrial license prompt sent to your phone.',
+                'reference': external_ref
+            }), 200
         else:
-            return jsonify({'status': 'error', 'message': f'Payment gateway error: {response.text}'}), response.status_code
+            return jsonify({'status': 'error', 'message': f'Provider Error: {response.text}'}), response.status_code
             
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@payments_bp.route('/callback', methods=['POST'])
+@csrf.exempt
+def payment_callback():
+    try:
+        data = request.json
+        if not data: return jsonify({'status': 'error'}), 400
+            
+        result_code = data.get('ResultCode')
+        external_ref = data.get('ExternalReference')
+        
+        transaction = Transaction.query.filter_by(reference=external_ref).first()
+        if not transaction: return jsonify({'status': 'error'}), 404
+            
+        if str(result_code) == '0':
+            transaction.status = 'Completed'
+            user = User.query.get(transaction.user_id)
+            if user: user.subscription_plan = transaction.plan_name
+            db.session.commit()
+        else:
+            transaction.status = 'Failed'
+            db.session.commit()
+        return jsonify({'status': 'success'}), 200
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @payments_bp.route('/success')
 @login_required
 def payment_success():
-    """Payment success callback"""
     payment_ref = request.args.get('reference') or session.get('payment_ref')
-    if payment_ref:
-        # SECURE: Verify that this transaction exists AND belongs to the current user
-        transaction = Transaction.query.filter_by(reference=payment_ref, user_id=current_user.id).first()
-        if transaction and transaction.status != 'Completed':
-            transaction.status = 'Completed'
-            current_user.subscription_plan = transaction.plan_name.capitalize()
-            db.session.commit()
-            flash(f'Plan upgraded to {transaction.plan_name.capitalize()}!', 'success')
-        elif not transaction:
-            # Log suspicious attempt if reference exists but doesn't belong to user
-            print(f"SECURITY ALERT: Unauthorized access attempt to payment ref {payment_ref} by user {current_user.id}")
-            return render_template('error.html', message='Unauthorized payment reference'), 403
+    if not payment_ref: return render_template('error.html', message='Reference missing'), 400
+        
+    transaction = Transaction.query.filter_by(reference=payment_ref, user_id=current_user.id).first()
+    if not transaction: return render_template('error.html', message='Unauthorized'), 403
+        
+    return render_template('payment_success.html', 
+                           reference=transaction.reference,
+                           plan=transaction.plan_name,
+                           email=current_user.email)
 
 @payments_bp.route('/failure')
 def payment_failure():
-    error_msg = request.args.get('message', 'Payment was not completed')
-    error_code = request.args.get('code', 'Unknown')
-    return render_template('payment_failure.html', error_message=error_msg, error_code=error_code)
+    return render_template('payment_failure.html')
 
 @payments_bp.route('/verify', methods=['POST'])
 @login_required
 def verify_payment():
     try:
         data = request.json
-        payment_ref = data.get('reference')
-        if not payment_ref:
-            return jsonify({'status': 'error', 'message': 'No payment reference provided'}), 400
-        
-        payhero_api_key = current_app.config['PAYHERO_API_KEY']
-        api_url = f'https://api.payhero.io/api/v2/payments/{payment_ref}'
-        if current_app.config['PAYHERO_SANDBOX']:
-            api_url = f'https://sandbox.payhero.io/api/v2/payments/{payment_ref}'
-        
-        headers = {'Authorization': f'Bearer {payhero_api_key}', 'Content-Type': 'application/json'}
-        response = requests.get(api_url, headers=headers, timeout=10)
+        external_ref = data.get('reference')
+        transaction = Transaction.query.filter_by(reference=external_ref, user_id=current_user.id).first()
+        if not transaction: return jsonify({'status': 'error'}), 404
+
+        if transaction.status == 'Completed':
+            return jsonify({'status': 'success', 'payment_status': 'Completed'}), 200
+
+        auth_header = get_payhero_auth()
+        status_url = f"https://backend.payhero.co.ke/api/v2/transaction-status?reference={external_ref}"
+        response = requests.get(status_url, headers={'Authorization': auth_header}, timeout=10)
         
         if response.status_code == 200:
-            result = response.json()
-            return jsonify({'status': 'success', 'payment_status': result.get('status'), 'amount': result.get('amount'), 'email': result.get('email')}), 200
-        else:
-            return jsonify({'status': 'error', 'message': 'Payment not found'}), 404
+            res_data = response.json()
+            if res_data.get('status', '').lower() == 'success':
+                transaction.status = 'Completed'
+                user = User.query.get(transaction.user_id)
+                if user: user.subscription_plan = transaction.plan_name
+                db.session.commit()
+                return jsonify({'status': 'success', 'payment_status': 'Completed'}), 200
+            return jsonify({'status': 'success', 'payment_status': res_data.get('status')}), 200
+        return jsonify({'status': 'error'}), 400
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500

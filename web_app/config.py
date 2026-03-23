@@ -33,8 +33,10 @@ class Config:
     JSONIFY_PRETTYPRINT_REGULAR = True
     
     # PayHero Payment Configuration
-    PAYHERO_API_KEY = os.environ.get('PAYHERO_API_KEY', '')
-    PAYHERO_API_SECRET = os.environ.get('PAYHERO_API_SECRET', '')
+    PAYHERO_USERNAME = os.environ.get('PAYHERO_USERNAME', '')
+    PAYHERO_AUTH_TOKEN = os.environ.get('Basic_Auth_Token', '')
+    PAYHERO_API_PASSWORD = os.environ.get('PAYHERO_API_PASSWORD', '')
+    PAYHERO_CHANNEL_ID = os.environ.get('PAYHERO_CHANNEL_ID', '')
     PAYHERO_SANDBOX = os.environ.get('PAYHERO_SANDBOX', 'true').lower() == 'true'
     PAYMENT_SUCCESS_URL = os.environ.get('PAYMENT_SUCCESS_URL', 'http://localhost:5000/payment/success')
     PAYMENT_FAIL_URL = os.environ.get('PAYMENT_FAIL_URL', 'http://localhost:5000/payment/failure')

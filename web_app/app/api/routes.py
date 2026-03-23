@@ -125,49 +125,20 @@ def get_machine_details(machine_id):
 @api_bp.route('/stats')
 @login_required
 def get_stats():
-    """Get statistics for the current monitored sample (10 machines)"""
-    data_dict = mls.get_data()
-    df_raw_all = data_dict['raw']
-    df_scaled_all = data_dict['scaled']
-
-    classifier, regressor = mls.get_models()
-    if df_raw_all is None or df_scaled_all is None or classifier is None:
-        return jsonify({'error': 'Data not loaded'}), 500
-
-    # Get user's machine fleet
-    user_machines = mls.get_user_machines(df_raw_all, current_user.id)
-    user_indices = user_machines['original_index'].values
-    df_scaled_local = df_scaled_all.iloc[user_indices]
-
-    # Vectorized inference for status determination
-    X_fleet_classifier = df_scaled_local[mls.FEATURE_COLS_CLASSIFIER]
-    X_fleet_regressor = df_raw_all.iloc[user_indices][mls.FEATURE_COLS_REGRESSOR]
-
-    probs = classifier.predict_proba(X_fleet_classifier)[:, 1]
-    wear = regressor.predict(X_fleet_regressor)
-    statuses = mls.calculate_statuses(probs, wear)
-
-    # Mirror sampling logic: 5 Critical, 3 Warning, 2 Normal
-    np.random.seed(42 + current_user.id)
-    crit_idx = np.where(statuses == 'CRITICAL')[0]
-    warn_idx = np.where(statuses == 'WARNING')[0]
-    norm_idx = np.where(statuses == 'NORMAL')[0]
-
-    s_crit = np.random.choice(crit_idx, min(5, len(crit_idx)), replace=False) if len(crit_idx) > 0 else []
-    s_warn = np.random.choice(warn_idx, min(3, len(warn_idx)), replace=False) if len(warn_idx) > 0 else []
-    s_norm = np.random.choice(norm_idx, min(2, len(norm_idx)), replace=False) if len(norm_idx) > 0 else []
-
-    sample_indices = np.concatenate([s_crit, s_warn, s_norm]).astype(int)
+    """Get statistics for the user's fleet (Sample-aware)"""
+    analysis = mls.perform_fleet_analysis(current_user.id)
+    if not analysis:
+        return jsonify({'error': 'Analysis failed: Check data/models.'}), 500
 
     return jsonify({
-        'total_machines': len(sample_indices),
-        'critical_count': len(s_crit),
-        'warning_count': len(s_warn),
-        'normal_count': len(s_norm),
-        'average_failure_risk': round(float(probs[sample_indices].mean()) * 100, 2) if len(sample_indices) > 0 else 0,
-        'max_failure_risk': round(float(probs[sample_indices].max()) * 100, 2) if len(sample_indices) > 0 else 0,
+        'total_machines': analysis['sample_stats']['total'],
+        'critical_count': analysis['sample_stats']['critical'],
+        'warning_count': analysis['sample_stats']['warning'],
+        'normal_count': analysis['sample_stats']['normal'],
+        'average_failure_risk': analysis['sample_stats']['avg_risk'],
         'timestamp': datetime.now().isoformat()
-    })@api_bp.route('/model-calibration')
+    })
+@api_bp.route('/model-calibration')
 @login_required
 @plan_required('Enterprise')
 def model_calibration():

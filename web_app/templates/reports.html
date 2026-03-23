@@ -1,0 +1,420 @@
+{% extends "base.html" %}
+
+{% block title %}Operational Audit Report - IndustriSense AI{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3 report-wrapper">
+    <!-- Professional Print Header (Visible only on print) -->
+    <div class="print-header d-none d-print-block">
+        <div class="row align-items-center mb-3">
+            <div class="col-6">
+                <div class="d-flex align-items-center mb-1">
+                    <i class="fas fa-microchip text-primary fs-3 me-2"></i>
+                    <h3 class="mb-0 fw-800">IndustriSense <span class="text-accent">AI</span></h3>
+                </div>
+                <p class="text-muted extra-small mb-0">Predictive Maintenance & Industrial Intelligence</p>
+            </div>
+            <div class="col-6 text-end">
+                <h4 class="fw-bold text-uppercase mb-1">Operational Audit</h4>
+                <div class="badge bg-primary px-2 py-1 mb-1" style="font-size: 0.7rem;">ID: IS-{{ report_date|replace(" ", "")|replace(",", "") }}-{{ report_id if is_archive else 'LIVE' }}</div>
+                <p class="text-muted extra-small mb-0">Generated: {{ report_date }}</p>
+            </div>
+        </div>
+        <div class="border-top border-bottom py-2 mb-4">
+            <div class="row">
+                <div class="col-4 border-end">
+                    <label class="extra-small text-uppercase fw-bold text-muted d-block">Client Facility</label>
+                    <span class="small fw-bold">{{ current_user.company_name or 'Facility Fleet' }}</span>
+                </div>
+                <div class="col-4 border-end text-center">
+                    <label class="extra-small text-uppercase fw-bold text-muted d-block">Industry Vertical</label>
+                    <span class="small fw-bold">{{ industry }}</span>
+                </div>
+                <div class="col-4 text-end">
+                    <label class="extra-small text-uppercase fw-bold text-muted d-block">Audit Status</label>
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 py-0 px-2" style="font-size: 0.65rem;">VERIFIED</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen Header (Hidden on print) -->
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3 d-print-none">
+        <div>
+            {% if is_archive %}
+            <a href="{{ url_for('main.reports_archive') }}" class="btn btn-link btn-sm text-decoration-none p-0 mb-1 text-muted">
+                <i class="fas fa-arrow-left me-1"></i> Back to Archive
+            </a>
+            {% endif %}
+            <h2 class="h3 fw-800 mb-0">{% if is_archive %}Archived Audit Record{% else %}Operational Audit Report{% endif %}</h2>
+            <p class="small text-muted mb-0">For: <span class="fw-bold text-primary">{{ current_user.company_name or 'Facility Fleet' }}</span> | {{ report_date }}</p>
+        </div>
+        <div class="text-end">
+            {% if not is_archive and current_user.role in ['Plant Manager', 'Reliability Engineer', 'System Administrator'] %}
+            <a href="{{ url_for('main.reports_archive') }}" class="btn btn-outline-secondary btn-sm px-3 shadow-sm me-2">
+                <i class="fas fa-archive me-2"></i>Archive History
+            </a>
+            {% endif %}
+            <button onclick="window.print()" class="btn btn-outline-primary btn-sm px-3 shadow-sm me-2">
+                <i class="fas fa-print me-2"></i>Print/PDF
+            </button>
+            {% if not is_archive and current_user.subscription_plan in ['Production Pro', 'Industrial Nexus'] and current_user.role in ['Plant Manager', 'System Administrator'] %}
+            <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#archiveModal">
+                <i class="fas fa-cloud-upload-alt me-2"></i>Archive
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Archive Modal -->
+    <div class="modal fade" id="archiveModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0">
+                <form action="{{ url_for('main.save_report') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Archive Operational Audit</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Target Industry Vertical</label>
+                            <select name="industry" class="form-select">
+                                <option value="General Manufacturing" {% if industry == 'General Manufacturing' %}selected{% endif %}>General Manufacturing</option>
+                                <option value="Food & Beverage" {% if industry == 'Food & Beverage' %}selected{% endif %}>Food & Beverage</option>
+                                <option value="Automotive Assembly" {% if industry == 'Automotive Assembly' %}selected{% endif %}>Automotive Assembly</option>
+                                <option value="Pharmaceuticals" {% if industry == 'Pharmaceuticals' %}selected{% endif %}>Pharmaceuticals</option>
+                                <option value="Chemical Processing" {% if industry == 'Chemical Processing' %}selected{% endif %}>Chemical Processing</option>
+                                <option value="Textiles & Apparel" {% if industry == 'Textiles & Apparel' %}selected{% endif %}>Textiles & Apparel</option>
+                            </select>
+                            <small class="text-muted mt-2 d-block">This tags the report for historical cross-industry analysis.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light border-0">
+                        <button type="button" class="btn btn-light border px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary px-4">Confirm Archive</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Executive Summary Section -->
+    <div class="report-section mb-4">
+        <div class="section-title mb-3 print-section-title">
+            <i class="fas fa-chart-pie text-primary d-print-none"></i> Executive Summary
+        </div>
+        <div class="row g-3">
+            <div class="col-lg-4">
+                <div class="stat-card h-100 p-3 border-0 shadow-sm text-center bg-primary text-white overflow-hidden position-relative print-stat-dark">
+                    <div class="position-relative" style="z-index: 2;">
+                        <h6 class="text-uppercase extra-small opacity-75 mb-2">Fleet Health</h6>
+                        <div class="h1 fw-800 mb-1">{{ stats.health }}%</div>
+                        <div class="progress bg-white bg-opacity-20 d-print-none mx-auto" style="height: 6px; width: 80%;">
+                            <div class="progress-bar bg-white" style="width: {{ stats.health }}%"></div>
+                        </div>
+                        <p class="extra-small mt-2 mb-0">Performance across {{ stats.total }} assets</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-8">
+                <div class="row g-3 h-100">
+                    <div class="col-md-4">
+                        <div class="stat-card h-100 p-3 border shadow-sm bg-white print-border">
+                            <h6 class="text-muted extra-small text-uppercase fw-bold mb-2">Assets</h6>
+                            <div class="h3 fw-bold mb-0 text-primary">{{ stats.total }}</div>
+                            <p class="extra-small text-muted mb-0">Active IoT nodes</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card h-100 p-3 border shadow-sm bg-white border-start border-warning border-4 print-border">
+                            <h6 class="text-muted extra-small text-uppercase fw-bold mb-2">Risk Exposure</h6>
+                            <div class="h3 fw-bold mb-0 text-warning">{{ stats.at_risk }}</div>
+                            <p class="extra-small text-muted mb-0">Above baseline</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card h-100 p-3 border shadow-sm bg-white print-border">
+                            <h6 class="text-muted extra-small text-uppercase fw-bold mb-2">Avg Risk</h6>
+                            <div class="h3 fw-bold mb-0 text-danger">{{ stats.avg_risk }}%</div>
+                            <p class="extra-small text-muted mb-0">Fleet probability</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Critical Assets (Pillar 2: Prediction) -->
+    <div class="report-section mb-4">
+        <div class="section-title mb-3 print-section-title">
+            <i class="fas fa-exclamation-triangle text-danger d-print-none"></i> Maintenance Action List
+        </div>
+        
+        <div class="table-container shadow-sm border mb-0 bg-white print-border">
+            <table class="table table-hover table-sm align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-3 py-2">Machine ID</th>
+                        <th class="text-center py-2">Risk</th>
+                        <th class="text-center py-2">RUL</th>
+                        <th class="py-2">Risk Driver</th>
+                        <th class="text-end pe-3 py-2">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if at_risk_list %}
+                        {% for machine in at_risk_list %}
+                        <tr style="font-size: 0.85rem;">
+                            <td class="ps-3 py-2">
+                                <span class="fw-bold text-primary">#{{ machine.id }}</span>
+                            </td>
+                            <td class="text-center py-2">
+                                <span class="badge bg-{{ 'danger' if machine.status == 'CRITICAL' else 'warning' }} bg-opacity-10 text-{{ 'danger' if machine.status == 'CRITICAL' else 'warning' }} border border-{{ 'danger' if machine.status == 'CRITICAL' else 'warning' }} border-opacity-25 px-2 py-1" style="font-size: 0.7rem;">
+                                    {{ machine.failure_risk }}%
+                                </span>
+                            </td>
+                            <td class="text-center py-2">
+                                <span class="fw-bold">{{ machine.predicted_rul }}</span> <small class="text-muted">min</small>
+                            </td>
+                            <td class="py-2">
+                                <span class="extra-small text-muted">{{ machine.reason }}</span>
+                            </td>
+                            <td class="text-end pe-3 py-2">
+                                <span class="badge bg-{{ 'danger' if machine.status == 'CRITICAL' else 'warning' }} px-2 py-1" style="font-size: 0.7rem;">{{ machine.action }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted small">
+                                <i class="fas fa-check-circle text-success me-2"></i>No critical assets identified.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Snapshot of All Monitored Assets -->
+    <div class="report-section mb-4">
+        <div class="section-title mb-3 print-section-title">
+            <i class="fas fa-camera text-accent d-print-none"></i> Fleet Snapshot
+        </div>
+        <div class="row g-2">
+            {% for machine in monitored_assets %}
+            <div class="col-6 col-md-4 col-xl-3">
+                <div class="p-2 bg-white border rounded shadow-sm d-flex justify-content-between align-items-center print-border">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-light p-1 rounded me-2 text-center print-bg-light" style="width: 40px;">
+                            <div class="extra-small fw-bold">#{{ machine.id }}</div>
+                        </div>
+                        <div>
+                            <div class="fw-bold extra-small">{{ machine.failure_risk }}% Risk</div>
+                            <div class="extra-small text-muted" style="font-size: 0.65rem;">{{ machine.predicted_rul }}m RUL</div>
+                        </div>
+                    </div>
+                    <span class="status-badge status-{{ machine.status|lower }}" style="font-size: 0.6rem; padding: 0.1rem 0.4rem;">{{ machine.status }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Tier-Specific Polishing -->
+    <div class="report-section mb-4">
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <div class="stat-card p-3 border shadow-sm h-100 position-relative print-border {% if current_user.subscription_plan == 'Operational Base' %}locked-feature{% endif %}">
+                    <h6 class="fw-bold mb-3 d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-calendar-check text-primary me-2 d-print-none"></i>Forecast</span>
+                        {% if current_user.subscription_plan == 'Operational Base' %}
+                            <span class="badge bg-warning text-dark extra-small d-print-none">PRO REQUIRED</span>
+                        {% endif %}
+                    </h6>
+                    
+                    {% if current_user.subscription_plan != 'Operational Base' %}
+                        <div class="d-grid gap-2">
+                            <div class="p-2 bg-light rounded border-start border-primary border-3 print-bg-light">
+                                <div class="fw-bold extra-small text-primary mb-0">Upcoming Shift</div>
+                                <p class="extra-small mb-0 text-muted">Component cleaning recommended for 3 units.</p>
+                            </div>
+                            <div class="p-2 bg-light rounded border-start border-accent border-3 print-bg-light">
+                                <div class="fw-bold extra-small text-accent mb-0">Weekly Outlook</div>
+                                <p class="extra-small mb-0 text-muted">Fleet health stable. Standard lubrication for Line 2.</p>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-2 opacity-50">
+                            <p class="extra-small mb-0">Upgrade to unlock maintenance forecasting.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="stat-card p-3 border shadow-sm h-100 position-relative print-border {% if current_user.subscription_plan != 'Industrial Nexus' %}locked-feature{% endif %}">
+                    <h6 class="fw-bold mb-3 d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-chart-line text-success me-2 d-print-none"></i>Financial ROI</span>
+                        {% if current_user.subscription_plan != 'Industrial Nexus' %}
+                            <span class="badge bg-warning text-dark extra-small d-print-none">NEXUS REQUIRED</span>
+                        {% endif %}
+                    </h6>
+
+                    {% if financials %}
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="p-2 bg-success bg-opacity-10 rounded text-center print-bg-light">
+                                    <div class="text-success fw-bold h4 mb-0">${{ financials.savings }}</div>
+                                    <div class="extra-small text-muted">Savings</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 bg-primary bg-opacity-10 rounded text-center print-bg-light">
+                                    <div class="text-primary fw-bold h4 mb-0">{{ financials.roi }}x</div>
+                                    <div class="extra-small text-muted">ROI</div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-2 opacity-50">
+                            <p class="extra-small mb-0">Nexus clients receive automated monthly ROI audits.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Official Signature Area (Print only) -->
+    <div class="report-signature d-none d-print-block mt-4 pt-3">
+        <div class="row">
+            <div class="col-4">
+                <div class="border-bottom mb-1" style="height: 40px;"></div>
+                <p class="extra-small text-uppercase fw-bold text-muted">Maintenance Engineer</p>
+            </div>
+            <div class="col-4 offset-4 text-end">
+                <div class="border-bottom mb-1" style="height: 40px;"></div>
+                <p class="extra-small text-uppercase fw-bold text-muted">Plant Management</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Transparency -->
+    <div class="mt-4 text-center text-muted extra-small d-none d-print-block">
+        <hr class="mb-2">
+        <p class="mb-1"><strong>Confidential - Internal Use Only.</strong> &copy; 2026 IndustriSense AI</p>
+        <p class="opacity-50">Report ID: IS-{{ report_date|replace(" ", "")|replace(",", "") }}-{{ report_id if is_archive else 'LIVE' }}</p>
+    </div>
+</div>
+
+<style>
+    .locked-feature::after {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(255,255,255,0.05);
+        pointer-events: none;
+        border-radius: 12px;
+    }
+    
+    @media print {
+        @page {
+            size: A4;
+            margin: 1.5cm;
+        }
+        
+        body {
+            background: white !important;
+            color: #0f172a !important;
+            font-size: 9pt;
+        }
+
+        .navbar, .assistant-bot, .d-print-none, footer { 
+            display: none !important; 
+        }
+
+        .content-wrapper { 
+            padding: 0 !important; 
+            margin: 0 !important; 
+            background: white !important;
+        }
+
+        .report-wrapper {
+            padding: 0 !important;
+            max-width: 100% !important;
+        }
+
+        .stat-card { 
+            border: 1px solid #e2e8f0 !important; 
+            box-shadow: none !important; 
+            break-inside: avoid;
+            padding: 0.75rem !important;
+        }
+
+        .print-stat-dark {
+            background-color: #0f172a !important;
+            color: white !important;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .print-bg-light {
+            background-color: #f8fafc !important;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .print-border {
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        .print-section-title {
+            border-bottom: 1.5px solid #0f172a;
+            padding-bottom: 3px;
+            margin-bottom: 0.75rem !important;
+            color: #0f172a !important;
+            text-transform: uppercase;
+            font-size: 1rem;
+        }
+
+        .table-container {
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        .table thead th {
+            background-color: #f1f5f9 !important;
+            color: #475569 !important;
+            padding: 4px 8px !important;
+            -webkit-print-color-adjust: exact;
+        }
+        
+        .table td {
+            padding: 4px 8px !important;
+        }
+
+        .badge {
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        .page-break-before {
+            page-break-before: always;
+            margin-top: 1rem;
+        }
+
+        /* Watermark */
+        body::after {
+            content: "OFFICIAL AUDIT REPORT";
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 4rem;
+            color: rgba(0,0,0,0.02);
+            z-index: -1;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+    }
+</style>
+{% endblock %}
