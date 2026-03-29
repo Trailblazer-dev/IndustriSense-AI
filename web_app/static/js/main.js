@@ -50,12 +50,12 @@ function initializeBot() {
                       "• <strong>Defense:</strong> CSRF tokens on all POST requests and brute-force rate limiting."
         },
         pricing: {
-            keywords: ['price', 'cost', 'pay', 'plan', 'starter', 'pro', 'enterprise', 'money', 'subscription'],
+            keywords: ['price', 'cost', 'pay', 'plan', 'base', 'pro', 'nexus', 'money', 'subscription'],
             response: "<strong>💳 Subscription Tiers:</strong><br><br>" +
-                      "• <strong>Starter:</strong> 5 machines + Advanced Analytics.<br>" +
-                      "• <strong>Professional:</strong> 50 machines + Manual Diagnostics API.<br>" +
-                      "• <strong>Enterprise:</strong> Unlimited machines + System Calibration.<br>" +
-                      "• <strong>Payments:</strong> Secure processing via PayHero (M-Pesa/Card)."
+                      "• <strong>Operational Base:</strong> 10 machines + Core Diagnostics.<br>" +
+                      "• <strong>Production Pro:</strong> 50 machines + Maintenance Forecasting.<br>" +
+                      "• <strong>Industrial Nexus:</strong> Unlimited machines + Full CMMS Integration.<br>" +
+                      "• <strong>Payments:</strong> Secure processing via PayHero (M-Pesa)."
         },
         project: {
             keywords: ['about', 'project', 'ktda', 'tea', 'origin', 'purpose', 'downtime'],
@@ -206,16 +206,26 @@ window.formatValue = (val, decimals = 2) => {
  */
 window.IndustriSense = {
     showFeedback: (message, type = 'info') => {
-        const container = document.querySelector('.content-wrapper');
+        const container = document.getElementById('flash-container');
+        if (!container) return;
+        
         const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show border-0 shadow-sm mx-4 mt-3`;
+        const icon = type === 'success' ? 'check-circle' : (type === 'danger' ? 'exclamation-triangle' : 'info-circle');
+        
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show border-0 shadow-sm mb-3`;
         alertDiv.innerHTML = `
             <div class="d-flex align-items-center">
-                <i class="fas fa-info-circle me-3"></i>
-                <div>${message}</div>
+                <i class="fas fa-${icon} me-3"></i>
+                <div class="fw-bold">${message}</div>
             </div>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
         container.prepend(alertDiv);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            const bsAlert = new bootstrap.Alert(alertDiv);
+            bsAlert.close();
+        }, 5000);
     }
 };

@@ -1,7 +1,7 @@
 import os
 from flask import Flask
 from config import config
-from app.extensions import db, login_manager, csrf, limiter, talisman
+from app.extensions import db, login_manager, csrf, limiter, talisman, celery, init_celery
 from app.models import User
 
 def create_app(config_name='default'):
@@ -20,6 +20,7 @@ def create_app(config_name='default'):
     db.init_app(app)
     csrf.init_app(app)
     limiter.init_app(app)
+    init_celery(app)
     
     # Talisman CSP Configuration
     csp = {
@@ -52,7 +53,9 @@ def create_app(config_name='default'):
     from app.payments import payments_bp
     app.register_blueprint(payments_bp)
 
+    print("Initializing Database Tables...")
     with app.app_context():
         db.create_all()
+    print("Database Initialization Complete.")
 
     return app

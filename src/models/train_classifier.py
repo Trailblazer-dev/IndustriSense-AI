@@ -13,10 +13,11 @@ Run:
 """
 import os
 import json
-import pickle
+import joblib
 import shutil
 import hashlib
 from pathlib import Path
+from datetime import datetime
 from typing import Dict, Optional
 
 import numpy as np
@@ -132,11 +133,10 @@ def main():
 
     if should_deploy:
         # Save to temp paths
-        new_pkl = temp_dir / f"{MODEL_NAME}.pkl"
+        new_joblib = temp_dir / f"{MODEL_NAME}.joblib"
         new_xgb = temp_dir / f"{MODEL_NAME}.xgb"
         
-        with open(new_pkl, 'wb') as f:
-            pickle.dump(model, f)
+        joblib.dump(model, new_joblib)
         model.get_booster().save_model(str(new_xgb))
         
         new_sha = sha256_file(new_xgb)
@@ -144,7 +144,7 @@ def main():
             f.write(new_sha)
 
         # Atomic Swap / Backup
-        prod_pkl = model_dir / f"{MODEL_NAME}.pkl"
+        prod_joblib = model_dir / f"{MODEL_NAME}.joblib"
         prod_xgb = model_dir / f"{MODEL_NAME}.xgb"
         prod_sha = model_dir / f"{MODEL_NAME}.xgb.sha256"
         prod_meta = model_dir / "model_metadata.json"
@@ -153,12 +153,13 @@ def main():
         backup_dir.mkdir(parents=True, exist_ok=True)
 
         print(f"Backing up current artifacts to {backup_dir}...")
-        for p in [prod_pkl, prod_xgb, prod_sha, prod_meta]:
+        for p in [prod_joblib, prod_xgb, prod_sha, prod_meta]:
             if p.exists():
                 shutil.copy(p, backup_dir / p.name)
 
         print("Swapping artifacts to production...")
-        shutil.move(str(new_pkl), str(prod_pkl))
+        if new_joblib.exists():
+            shutil.move(str(new_joblib), str(prod_joblib))
         shutil.move(str(new_xgb), str(prod_xgb))
         shutil.move(str(temp_dir / f"{MODEL_NAME}.xgb.sha256"), str(prod_sha))
 

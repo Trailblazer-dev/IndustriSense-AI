@@ -7,7 +7,7 @@
     <div class="container">
         <div class="checkout-header">
             <h1 class="checkout-title">Complete Your Purchase</h1>
-            <p class="checkout-subtitle">{{ plan.name }} Plan - ${{ plan.price }}/month</p>
+            <p class="checkout-subtitle">{{ plan.name }} Plan - KES {{ plan.price }}/month</p>
         </div>
 
         <div class="checkout-grid">
@@ -23,7 +23,7 @@
                         
                         <div class="summary-line">
                             <span>Monthly Subscription</span>
-                            <strong>${{ plan.price }}.00</strong>
+                            <strong>KES {{ plan.price }}.00</strong>
                         </div>
                         <div class="summary-line">
                             <span>Setup Fee</span>
@@ -34,7 +34,7 @@
                         
                         <div class="summary-total">
                             <span>Total Due Today</span>
-                            <strong>${{ plan.price }}.00</strong>
+                            <strong>KES {{ plan.price }}.00</strong>
                         </div>
                         
                         <p class="summary-note">Billed monthly. Cancel anytime with no penalties.</p>
@@ -123,22 +123,24 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="industry" class="form-label">Industry</label>
-                                <select class="form-control" id="industry" name="industry">
+                                <select class="form-control" id="industry" name="industry" required>
                                     <option value="">Select Industry...</option>
-                                    <option value="manufacturing">Manufacturing</option>
-                                    <option value="automotive">Automotive</option>
-                                    <option value="food_beverage">Food & Beverage</option>
-                                    <option value="pharmaceuticals">Pharmaceuticals</option>
-                                    <option value="chemicals">Chemicals</option>
-                                    <option value="textiles">Textiles</option>
-                                    <option value="utilities">Utilities</option>
-                                    <option value="other">Other</option>
+                                    <option value="manufacturing" {% if current_user.organization and current_user.organization.industry|lower == 'manufacturing' %}selected{% endif %}>Manufacturing</option>
+                                    <option value="automotive" {% if current_user.organization and current_user.organization.industry|lower == 'automotive' %}selected{% endif %}>Automotive</option>
+                                    <option value="food_beverage" {% if current_user.organization and current_user.organization.industry|lower == 'food_beverage' %}selected{% endif %}>Food & Beverage</option>
+                                    <option value="pharmaceuticals" {% if current_user.organization and current_user.organization.industry|lower == 'pharmaceuticals' %}selected{% endif %}>Pharmaceuticals</option>
+                                    <option value="chemicals" {% if current_user.organization and current_user.organization.industry|lower == 'chemicals' %}selected{% endif %}>Chemicals</option>
+                                    <option value="textiles" {% if current_user.organization and current_user.organization.industry|lower == 'textiles' %}selected{% endif %}>Textiles</option>
+                                    <option value="utilities" {% if current_user.organization and current_user.organization.industry|lower == 'utilities' %}selected{% endif %}>Utilities</option>
+                                    <option value="other" {% if current_user.organization and current_user.organization.industry|lower == 'other' %}selected{% endif %}>Other</option>
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label for="machines" class="form-label">Number of Machines</label>
                                 <input type="number" class="form-control" id="machines" name="machines" 
-                                       placeholder="e.g., 10" min="1">
+                                       value="{{ current_user.organization.machine_count if current_user.organization else 10 }}" 
+                                       placeholder="e.g., 10" min="1" max="500" required>
+                                <small class="form-help">Max capacity: 500 units per facility</small>
                             </div>
                         </div>
                     </fieldset>
@@ -668,7 +670,7 @@ async function handleCheckoutSubmit(event) {
         errorDiv.classList.remove('d-none');
         errorText.textContent = error.message;
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-lock me-2"></i>Proceed to Payment (${{ plan.price }}.00)';
+        submitBtn.innerHTML = `<i class="fas fa-lock me-2"></i>Proceed to Payment (KES {{ plan.price }}.00)`;
     }
 }
 

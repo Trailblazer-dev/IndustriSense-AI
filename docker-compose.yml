@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: industrisense_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-industri_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-industri_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-industrisense}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: industrisense_redis
+    ports:
+      - "6379:6379"
+
+  web:
+    build: .
+    container_name: industrisense_app
+    command: gunicorn --bind 0.0.0.0:5000 --timeout 120 wsgi:app
+    volumes:
+      - .:/app
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-industri_admin}:${POSTGRES_PASSWORD:-industri_pass}@db:5432/${POSTGRES_DB:-industrisense}
+      - REDIS_URL=redis://redis:6379/0
+      - FLASK_ENV=production
+      - TALISMAN_FORCE_HTTPS=false
+      - SECRET_KEY=${SECRET_KEY:-industrisense_secret_key_123}
+      # Required by config.py: loads from 'Basic_Auth_Token'
+      - Basic_Auth_Token=Basic ajhPQ0JndTFhVGJYQ09MSERtQnQ6cXpTMmNWcnJxNTliQ2dXVmRWbHdtQWdiMHJiUENTWHNSTkVSQ25BMQ==
+      - PAYHERO_USERNAME=j8OCBgu1aTbXCOLHDmBt
+      - PAYHERO_API_PASSWORD=qzS2cVrrq59bCgWVdVlwmAgb0rbPCSXsRNERCnA1
+      - PAYHERO_CHANNEL_ID=5648
+      - PAYHERO_SANDBOX=true
+      - CALLBACK_URL=https://audria-unretroactive-atavistically.ngrok-free.app/payment/callback
+      - PYTHONPATH=/app:/app/web_app
+    depends_on:
+      - db
+      - redis
+
+  worker:
+    build: .
+    container_name: industrisense_worker
+    command: celery -A app.tasks:celery worker --loglevel=info
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-industri_admin}:${POSTGRES_PASSWORD:-industri_pass}@db:5432/${POSTGRES_DB:-industrisense}
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-industrisense_secret_key_123}
+      # Sync keys to worker for background payment verification
+      - Basic_Auth_Token=Basic ajhPQ0JndTFhVGJYQ09MSERtQnQ6cXpTMmNWcnJxNTliQ2dXVmRWbHdtQWdiMHJiUENTWHNSTkVSQ25BMQ==
+      - PAYHERO_USERNAME=j8OCBgu1aTbXCOLHDmBt
+      - PAYHERO_API_PASSWORD=qzS2cVrrq59bCgWVdVlwmAgb0rbPCSXsRNERCnA1
+      - PAYHERO_CHANNEL_ID=5648
+      - PAYHERO_SANDBOX=true
+      - CALLBACK_URL=https://audria-unretroactive-atavistically.ngrok-free.app/payment/callback
+      - PYTHONPATH=/app:/app/web_app
+    depends_on:
+      - db
+      - redis
+
+volumes:
+  postgres_data:

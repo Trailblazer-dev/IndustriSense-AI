@@ -16,3 +16,7 @@ seaborn>=0.13.0
 python-dotenv==1.0.0
 requests>=2.31.0
 flask-talisman==1.1.0
+psycopg2-binary==2.9.9
+celery==5.3.6
+redis==5.0.1
+flower==2.0.1

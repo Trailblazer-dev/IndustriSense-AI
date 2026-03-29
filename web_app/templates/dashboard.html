@@ -2,119 +2,316 @@
 
 {% block title %}Dashboard - IndustriSense AI{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Dashboard Specific Enhancements */
+    .nexus-ribbon {
+        background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%);
+        border-radius: 12px;
+        padding: 1.5rem 2rem;
+        margin-bottom: 2.5rem;
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .nexus-ribbon::after {
+        content: 'INDUSTRIAL NEXUS';
+        position: absolute;
+        right: -20px;
+        top: 20px;
+        font-size: 4rem;
+        font-weight: 900;
+        color: rgba(255,255,255,0.03);
+        transform: rotate(-5deg);
+        pointer-events: none;
+    }
+
+    .kpi-card {
+        background: transparent;
+        border-right: 1px solid rgba(255,255,255,0.1);
+        padding: 0 1.5rem;
+    }
+
+    .kpi-card:last-child {
+        border-right: none;
+    }
+
+    .kpi-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .kpi-value {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: white;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .kpi-trend {
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+
+    .trend-up { color: #10b981; }
+    .trend-down { color: #ef4444; }
+
+    /* Modern Asset Grid */
+    .asset-search-bar {
+        background: white;
+        border-radius: 12px;
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .search-input {
+        border: none;
+        outline: none;
+        flex: 1;
+        font-weight: 500;
+        color: #1e293b;
+    }
+
+    .asset-tile {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        padding: 1.5rem;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        position: relative;
+    }
+
+    .asset-tile:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        transform: translateY(-4px);
+    }
+
+    .asset-tile-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.25rem;
+    }
+
+    .asset-badge {
+        font-size: 0.7rem;
+        font-weight: 800;
+        padding: 4px 10px;
+        border-radius: 6px;
+        text-transform: uppercase;
+    }
+
+    .badge-critical { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+    .badge-warning { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
+    .badge-normal { background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; }
+
+    .asset-id {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
+        color: #64748b;
+        font-size: 0.875rem;
+    }
+
+    .risk-gauge-container {
+        height: 80px;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: flex-end;
+        gap: 4px;
+    }
+
+    .gauge-bar {
+        flex: 1;
+        background: #f1f5f9;
+        border-radius: 2px;
+        transition: height 1s ease-out;
+    }
+
+    .asset-metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        border-top: 1px solid #f1f5f9;
+        padding-top: 1rem;
+    }
+
+    .asset-metric-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+
+    .asset-metric-value {
+        font-weight: 700;
+        color: #1e293b;
+        font-size: 0.95rem;
+    }
+
+    /* Pulse animation for critical assets */
+    @keyframes pulse-danger {
+        0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+    }
+
+    .asset-tile.critical {
+        border-color: rgba(220, 38, 38, 0.3);
+        animation: pulse-danger 2s infinite;
+    }
+
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-end mb-4">
+<div class="container-fluid">
+    
+    <!-- Breadcrumbs & Header -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#" class="text-decoration-none text-muted">IndustriSense</a></li>
+            <li class="breadcrumb-item active fw-semibold" aria-current="page">Dashboard</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="page-title mb-1">Fleet Monitor</h1>
-            <p class="text-muted">Real-time health status across your industrial assets</p>
+            <h2 class="fw-extrabold mb-1" style="letter-spacing: -0.04em;">Fleet Health Operations</h2>
+            <p class="text-muted mb-0">Organization: <span class="fw-bold text-dark">{{ current_user.company_name }}</span></p>
         </div>
-        <div class="pb-3">
-            <span class="badge bg-white text-primary border px-3 py-2 shadow-sm">
-                <i class="fas fa-sync fa-spin me-2"></i>Live Update
-            </span>
+        <div class="d-flex gap-2">
+            <button class="btn btn-white border shadow-sm btn-sm px-3" onclick="location.reload()">
+                <i class="fas fa-sync-alt me-2"></i>Refresh Data
+            </button>
+            <a href="{{ url_for('main.reports_archive') }}" class="btn btn-primary btn-sm px-3 shadow-sm">
+                <i class="fas fa-plus me-2"></i>Generate Report
+            </a>
         </div>
     </div>
-    
-    <!-- Strategic Stats -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <h3>Total Assets</h3>
-            <p class="stat-value" id="total-machines">{{ status_counts.total }}</p>
-            <div class="progress mt-3" style="height: 4px;">
-                <div class="progress-bar bg-accent" style="width: 100%"></div>
+
+    <!-- Premium Nexus KPI Ribbon -->
+    <div class="nexus-ribbon shadow-lg">
+        <div class="row align-items-center">
+            <div class="col-md-3 kpi-card">
+                <div class="kpi-label"><i class="fas fa-microchip text-accent"></i> Fleet Utilization</div>
+                <div class="kpi-value">94.2<small class="fs-6 text-muted ms-1">%</small></div>
             </div>
-        </div>
-        <div class="stat-card critical">
-            <h3>Critical Risk</h3>
-            <p class="stat-value" id="critical-count">{{ status_counts.critical }}</p>
-            <div class="progress mt-3" style="height: 4px;">
-                <div id="critical-progress" class="progress-bar bg-danger" style="width: {{ (status_counts.critical / status_counts.total * 100)|round if status_counts.total > 0 else 0 }}%"></div>
+            <div class="col-md-3 kpi-card">
+                <div class="kpi-label"><i class="fas fa-heartbeat text-success"></i> Health Index</div>
+                <div class="kpi-value" id="fleet-health">{{ 100 - (status_counts.critical / status_counts.total * 100)|round(1) if status_counts.total > 0 else 100 }}<small class="fs-6 text-muted ms-1">%</small></div>
             </div>
-        </div>
-        <div class="stat-card warning">
-            <h3>Active Warnings</h3>
-            <p class="stat-value" id="warning-count">{{ status_counts.warning }}</p>
-            <div class="progress mt-3" style="height: 4px;">
-                <div id="warning-progress" class="progress-bar bg-warning" style="width: {{ (status_counts.warning / status_counts.total * 100)|round if status_counts.total > 0 else 0 }}%"></div>
+            <div class="col-md-3 kpi-card">
+                <div class="kpi-label"><i class="fas fa-bolt text-warning"></i> Risk Variance</div>
+                <div class="kpi-value">
+                    {{ status_counts.critical + status_counts.warning }}
+                    <span class="kpi-trend trend-down"><i class="fas fa-arrow-down me-1"></i>2.4%</span>
+                </div>
             </div>
-        </div>
-        <div class="stat-card normal">
-            <h3>Operational</h3>
-            <p class="stat-value" id="normal-count">{{ status_counts.normal }}</p>
-            <div class="progress mt-3" style="height: 4px;">
-                <div id="normal-progress" class="progress-bar bg-success" style="width: {{ (status_counts.normal / status_counts.total * 100)|round if status_counts.total > 0 else 0 }}%"></div>
+            <div class="col-md-3 kpi-card">
+                <div class="kpi-label"><i class="fas fa-shield-alt text-info"></i> Protected Assets</div>
+                <div class="kpi-value">{{ status_counts.total }}</div>
             </div>
         </div>
     </div>
 
-    <div class="section-title">
-        <i class="fas fa-microchip text-accent"></i> Machine Health Tiles
+    <!-- Asset Search & Filters -->
+    <div class="asset-search-bar">
+        <i class="fas fa-search text-muted"></i>
+        <input type="text" class="search-input" placeholder="Search by Machine ID, Status, or Health Parameter..." id="assetSearch">
+        <div class="vr mx-2 text-muted opacity-25" style="height: 24px;"></div>
+        <div class="dropdown">
+            <button class="btn btn-link text-decoration-none text-dark fw-bold btn-sm dropdown-toggle p-0" data-bs-toggle="dropdown" id="statusFilterBtn">
+                All Status
+            </button>
+            <ul class="dropdown-menu shadow border-0">
+                <li><a class="dropdown-item" href="#" onclick="filterByStatus('all', 'All Status')">All Status</a></li>
+                <li><a class="dropdown-item text-danger" href="#" onclick="filterByStatus('critical', 'Critical Only')">Critical Only</a></li>
+                <li><a class="dropdown-item text-warning" href="#" onclick="filterByStatus('warning', 'Warnings')">Warnings</a></li>
+                <li><a class="dropdown-item text-success" href="#" onclick="filterByStatus('normal', 'Normal')">Normal</a></li>
+            </ul>
+        </div>
     </div>
-    
-    <div class="machines-grid">
+
+    <!-- Machines Grid -->
+    <div class="row g-4 row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 row-cols-xxl-5">
         {% for machine in machines %}
-        <div class="machine-card status-{{ machine.status|lower }}" onclick="loadMachineDetails({{ machine.id }})">
-            <div class="card-header">
-                <span class="machine-id">#{{ machine.id }}</span>
-                <span class="status-badge status-{{ machine.status|lower }}">
-                    <i class="fas fa-{{ 'circle-exclamation' if machine.status == 'CRITICAL' else 'triangle-exclamation' if machine.status == 'WARNING' else 'circle-check' }} me-1"></i>
-                    {{ machine.status }}
-                </span>
-            </div>
-            
-            <div class="card-body">
-                <div class="metric-primary">
-                    <div class="metric-label">Failure Risk</div>
-                    <div class="metric-value-large">{{ machine.failure_risk }}%</div>
+        <div class="col machine-item" data-id="{{ machine.id }}" data-status="{{ machine.status|lower }}">
+            <div class="asset-tile {{ machine.status|lower }}" onclick="loadMachineDetails({{ machine.id }})">
+                <div class="asset-tile-header">
+                    <span class="asset-id">ID: #{{ machine.id }}</span>
+                    <span class="asset-badge badge-{{ machine.status|lower }}">
+                        {{ machine.status }}
+                    </span>
                 </div>
                 
-                <div class="metric-row">
-                    <div class="metric-block">
-                        <div class="metric-label-small">Est. Wear</div>
-                        <div class="metric-value-medium text-primary">{{ machine.predicted_tool_wear }}<small class="ms-1 fw-normal text-muted">min</small></div>
-                    </div>
-                    <div class="metric-block">
-                        <div class="metric-label-small">RUL</div>
-                        <div class="metric-value-medium text-accent">{{ machine.predicted_rul }}<small class="ms-1 fw-normal text-muted">min</small></div>
+                <div class="risk-gauge-container">
+                    {% for i in range(12) %}
+                    <div class="gauge-bar" style="height: {{ (machine.failure_risk * (0.5 + (i/24)))|round }}%; background: {% if machine.failure_risk >= 75 %}#dc2626{% elif machine.failure_risk >= 50 %}#d97706{% else %}#3b82f6{% endif %}; opacity: {{ 0.2 + (i/15) }};"></div>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-end">
+                        <span class="text-muted small fw-bold text-uppercase">Failure Risk</span>
+                        <span class="fw-extrabold fs-4">{{ machine.failure_risk }}%</span>
                     </div>
                 </div>
-            </div>
-            
-            <div class="card-footer">
-                <span class="timestamp">
-                    <i class="far fa-clock me-1"></i>{{ machine.timestamp|default('Just now', true) }}
-                </span>
+
+                <div class="asset-metrics">
+                    <div>
+                        <div class="asset-metric-label">Estimated Wear</div>
+                        <div class="asset-metric-value text-primary">{{ machine.predicted_tool_wear }}m</div>
+                    </div>
+                    <div>
+                        <div class="asset-metric-label">Remaining Life</div>
+                        <div class="asset-metric-value text-accent">{{ machine.predicted_rul }}m</div>
+                    </div>
+                </div>
             </div>
         </div>
         {% endfor %}
     </div>
 
-    <!-- Enhanced Machine Details Modal -->
-    <div class="modal fade" id="machineModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content shadow-lg border-0">
-                <div class="modal-header px-4 py-3">
-                    <h5 class="modal-title fw-bold" id="modalTitle">Machine Analysis</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+
+<!-- Reuse the existing Modal from previous dashboard but we could also upgrade it later -->
+<div class="modal fade" id="machineModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 16px; overflow: hidden;">
+            <div class="modal-header px-4 py-3 bg-dark text-white border-0">
+                <h5 class="modal-title fw-bold" id="modalTitle">Machine Analysis</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" id="machineDetails">
+                <!-- Content injected via JS -->
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
                 </div>
-                <div class="modal-body p-4" id="machineDetails">
-                    <!-- Dynamic content loads here -->
-                    <div class="text-center py-5">
-                        <div class="spinner-border text-accent" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light border-0 px-4 py-3">
-                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Close Report</button>
-                    <a href="{{ url_for('main.predict_interface') }}" class="btn btn-primary px-4">Manual Diagnostics</a>
-                </div>
+            </div>
+            <div class="modal-footer bg-light border-0 px-4 py-3">
+                <button type="button" class="btn btn-secondary px-4 py-2" data-bs-dismiss="modal">Close</button>
+                <a href="{{ url_for('main.predict_interface') }}" class="btn btn-primary px-4 py-2">Full Diagnostics</a>
             </div>
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block scripts %}
@@ -123,154 +320,142 @@ let machineModal;
 
 document.addEventListener('DOMContentLoaded', () => {
     machineModal = new bootstrap.Modal(document.getElementById('machineModal'));
+    
+    // Simple search filter
+    const searchInput = document.getElementById('assetSearch');
+    searchInput.addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        document.querySelectorAll('.machine-item').forEach(item => {
+            const id = item.getAttribute('data-id');
+            if (id.includes(term)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
 });
 
+function filterByStatus(status, label) {
+    document.getElementById('statusFilterBtn').textContent = label;
+    document.querySelectorAll('.machine-item').forEach(item => {
+        const itemStatus = item.getAttribute('data-status');
+        if (status === 'all' || itemStatus === status) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
 function loadMachineDetails(machineId) {
-    // Show modal with loader first
     document.getElementById('machineDetails').innerHTML = `
         <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading analysis...</span>
-            </div>
-            <p class="mt-3 text-muted">Retrieving diagnostic data...</p>
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-3 text-muted fw-bold">Generating Nexus Diagnostic Report...</p>
         </div>
     `;
     machineModal.show();
 
     fetch('{{ url_for("api.get_machine_details", machine_id=0) }}'.replace('0', machineId))
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+            return response.json();
+        })
         .then(data => {
+            if (data.error) throw new Error(data.error);
+
             document.getElementById('modalTitle').innerHTML = `
-                <i class="fas fa-microchip text-accent me-2"></i>Machine #${data.machine_id} Diagnostic Report
+                <i class="fas fa-microchip text-accent me-2"></i>Machine #${machineId} Diagnostic Report
             `;
             
+            // Determine alert class based on risk (Unified 75/50 logic)
+            const risk = data.failure_analysis.probability_percent;
+            const alertClass = risk >= 75 ? 'danger' : (risk >= 50 ? 'warning' : 'success');
+            
             let html = `
-                <!-- Reliability Header -->
-                <div class="reliability-warning border-0 shadow-sm d-flex align-items-start mb-4">
-                    <div class="bg-warning bg-opacity-10 p-3 rounded-circle me-3">
-                        <i class="fas fa-shield-halved text-warning fs-4"></i>
-                    </div>
-                    <div>
-                        <h6 class="fw-bold text-warning mb-1">Model Reliability: ${data.model_reliability.status}</h6>
-                        <p class="small text-muted mb-0">${data.model_reliability.warning}</p>
-                    </div>
-                </div>
-
-                <div class="row g-4">
-                    <!-- Failure Risk Card -->
-                    <div class="col-md-6">
-                        <div class="details-section h-100 shadow-sm border">
-                            <h6 class="fw-bold mb-3"><i class="fas fa-bolt text-danger me-2"></i>Risk Assessment</h6>
-                            <div class="d-flex align-items-center justify-content-between mb-2">
-                                <span class="small text-muted">Probability</span>
-                                <span class="fw-bold fs-4 text-primary">${data.failure_analysis.probability_percent}%</span>
-                            </div>
-                            <div class="progress mb-3" style="height: 10px;">
-                                <div class="progress-bar bg-danger" style="width: ${data.failure_analysis.probability_percent}%"></div>
-                            </div>
-                            <span class="status-badge status-${data.failure_analysis.status.toLowerCase()} d-block text-center">
-                                ${data.failure_analysis.status}
-                            </span>
+                <div class="p-4">
+                    <div class="alert alert-${alertClass} border-0 shadow-sm d-flex align-items-center mb-4">
+                        <i class="fas fa-shield-halved fs-4 me-3"></i>
+                        <div>
+                            <h6 class="fw-bold mb-0">System Status: ${data.failure_analysis.status}</h6>
+                            <p class="small mb-0 opacity-75">${data.model_reliability.warning}</p>
                         </div>
                     </div>
 
-                    <!-- Tool Life Card -->
-                    <div class="col-md-6">
-                        <div class="details-section h-100 shadow-sm border">
-                            <h6 class="fw-bold mb-3"><i class="fas fa-hourglass-half text-accent me-2"></i>Remaining Life</h6>
-                            <div class="text-center py-2">
-                                <div class="metric-value-large mb-0">${data.rul_analysis.predicted_remaining_useful_life}</div>
-                                <div class="small text-muted uppercase">Minutes Remaining</div>
-                            </div>
-                            <div class="mt-3 p-2 bg-white rounded border small text-center text-muted">
-                                <i class="far fa-calendar-alt me-1"></i> Est. Service: ${data.rul_analysis.predicted_calendar_time.formatted}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Actual vs Predicted Table -->
-                    <div class="col-12">
-                        <div class="table-container border">
-                            <table class="table table-hover align-middle">
-                                <thead>
-                                    <tr>
-                                        <th>Metric Type</th>
-                                        <th class="text-center">Actual (Verified)</th>
-                                        <th class="text-center">AI Estimate</th>
-                                        <th class="text-center">Variance</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td class="fw-medium">Cumulative Wear</td>
-                                        <td class="text-center">${data.tool_wear_analysis.actual_tool_wear_minutes} min</td>
-                                        <td class="text-center text-accent fw-bold">${data.tool_wear_analysis.predicted_tool_wear_minutes} min</td>
-                                        <td class="text-center">
-                                            <span class="badge bg-light text-danger">±${data.tool_wear_analysis.prediction_error_minutes} min</span>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Sensor Telemetry -->
-                    <div class="col-12">
-                        <h6 class="fw-bold mb-3 px-1">Raw Sensor Telemetry</h6>
-                        <div class="details-grid">
-                            ${Object.entries(data.features).map(([key, val]) => `
-                                <div class="detail-item shadow-sm">
-                                    <div class="metric-label-small text-truncate" title="${key}">${key}</div>
-                                    <div class="fw-bold text-primary">${typeof val === 'number' ? val.toFixed(2) : val}</div>
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="p-4 bg-white border rounded-4 shadow-sm h-100">
+                                <h6 class="text-muted small fw-bold text-uppercase mb-3">Predictive Failure Risk</h6>
+                                <div class="d-flex align-items-end gap-2 mb-2">
+                                    <span class="display-5 fw-extrabold text-dark">${data.failure_analysis.probability_percent}</span>
+                                    <span class="fs-4 fw-bold text-muted mb-2">%</span>
                                 </div>
-                            `).join('')}
+                                <div class="progress" style="height: 12px; border-radius: 10px;">
+                                    <div class="progress-bar bg-danger shadow-sm" style="width: ${data.failure_analysis.probability_percent}%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="p-4 bg-white border rounded-4 shadow-sm h-100">
+                                <h6 class="text-muted small fw-bold text-uppercase mb-3">Tool Degradation (RUL)</h6>
+                                <div class="d-flex align-items-end gap-2 mb-2">
+                                    <span class="display-5 fw-extrabold text-accent">${data.rul_analysis.predicted_remaining_useful_life}</span>
+                                    <span class="fs-4 fw-bold text-muted mb-2">min</span>
+                                </div>
+                                <p class="small text-muted mb-0"><i class="far fa-clock me-1"></i> Estimated end-of-life: ${data.rul_analysis.predicted_calendar_time.formatted}</p>
+                            </div>
+                        </div>
+
+                        ${data.work_order ? `
+                        <div class="col-12">
+                            <div class="p-4 bg-primary bg-opacity-10 border-start border-primary border-4 rounded-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="fw-bold text-primary mb-0"><i class="fas fa-tools me-2"></i>Nexus Work Order Generated</h6>
+                                    <span class="badge bg-primary px-3 py-2">${data.work_order.priority}</span>
+                                </div>
+                                <div class="bg-white p-3 rounded-3 border mb-3">
+                                    <p class="fw-bold mb-1 text-dark">${data.work_order.instruction}</p>
+                                    <p class="small text-muted mb-0">Order Reference: ${data.work_order.order_id}</p>
+                                </div>
+                                <button class="btn btn-primary w-100 py-3 fw-bold" onclick="alert('Syncing with Nexus CMMS...')">Sync Task to Enterprise Fleet</button>
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <div class="col-12">
+                            <h6 class="text-muted small fw-bold text-uppercase mb-3 px-1">Telemetry Snapshot</h6>
+                            <div class="row g-3">
+                                ${Object.entries(data.features).map(([key, val]) => `
+                                    <div class="col-6 col-md-4">
+                                        <div class="p-3 bg-light rounded-3 border shadow-xs h-100">
+                                            <div class="text-muted extra-small fw-bold text-uppercase mb-1 text-truncate" title="${key}">${key}</div>
+                                            <div class="fw-extrabold text-dark">${typeof val === 'number' ? val.toFixed(2) : val}</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="mt-4 p-3 bg-light rounded-3 small">
-                    <p class="mb-0 text-muted fst-italic">
-                        <strong>Transparency Note:</strong> ${data.model_performance_note}
-                    </p>
                 </div>
             `;
             
             document.getElementById('machineDetails').innerHTML = html;
         })
         .catch(err => {
+            console.error('Diagnostic Fetch Error:', err);
             document.getElementById('machineDetails').innerHTML = `
-                <div class="alert alert-danger mx-auto my-5 border-0 shadow-sm" style="max-width: 400px;">
-                    <i class="fas fa-exclamation-circle me-2"></i>Failed to load machine data.
+                <div class="p-5 text-center text-danger">
+                    <i class="fas fa-triangle-exclamation fs-1 mb-3"></i>
+                    <h5 class="fw-bold">Nexus Engine Offline</h5>
+                    <p class="small text-muted">${err.message}</p>
+                    <button class="btn btn-sm btn-outline-danger mt-3" onclick="loadMachineDetails(${machineId})">
+                        <i class="fas fa-rotate-right me-1"></i> Retry Analysis
+                    </button>
                 </div>
             `;
         });
 }
-
-// Refresh fleet stats every 60 seconds
-setInterval(() => {
-    fetch('{{ url_for("api.get_stats") }}')
-        .then(response => response.json())
-        .then(data => {
-            if(data.error) return;
-            
-            const total = data.total_machines;
-            
-            // Update Text
-            if(document.getElementById('total-machines')) document.getElementById('total-machines').textContent = total;
-            if(document.getElementById('critical-count')) document.getElementById('critical-count').textContent = data.critical_count;
-            if(document.getElementById('warning-count')) document.getElementById('warning-count').textContent = data.warning_count;
-            if(document.getElementById('normal-count')) document.getElementById('normal-count').textContent = data.normal_count;
-            
-            // Update Progress Bars
-            if(total > 0) {
-                if(document.getElementById('critical-progress')) 
-                    document.getElementById('critical-progress').style.width = (data.critical_count / total * 100) + '%';
-                if(document.getElementById('warning-progress')) 
-                    document.getElementById('warning-progress').style.width = (data.warning_count / total * 100) + '%';
-                if(document.getElementById('normal-progress')) 
-                    document.getElementById('normal-progress').style.width = (data.normal_count / total * 100) + '%';
-            }
-        });
-}, 60000);
 </script>
 {% endblock %}

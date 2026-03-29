@@ -9,7 +9,7 @@ from app.services import ml_service as mls
 
 @api_bp.route('/predict', methods=['POST'])
 @login_required
-@plan_required('Professional')
+@plan_required('Production Pro')
 def predict():
     """API endpoint for predictions (Accepts RAW sensor data)"""
     classifier, regressor = mls.get_models()
@@ -59,10 +59,12 @@ def get_machine_details(machine_id):
     if df_raw_all is None or df_scaled_all is None:
         return jsonify({'error': 'Data not loaded'}), 500
     
-    # Strict multi-tenancy: Verify this machine belongs to the user
-    user_machines = mls.get_user_machines(df_raw_all, current_user.id)
+    # Strict multi-tenancy: Verify this machine belongs to the user's organization
+    # Fetch current machine count for validation
+    m_count = current_user.organization.machine_count if current_user.organization else 10
+    user_machines = mls.get_user_machines(df_raw_all, current_user.organization_id or current_user.id, machine_count=m_count)
     if machine_id not in user_machines['original_index'].values:
-        return jsonify({'error': 'Access denied: Machine not assigned to your fleet'}), 403
+        return jsonify({'error': 'Access denied: Machine not assigned to your organization fleet'}), 403
     
     # Inference: Classifier uses scaled, Regressor uses raw
     X_classifier = df_scaled_all.iloc[[machine_id]][mls.FEATURE_COLS_CLASSIFIER]
@@ -74,6 +76,12 @@ def get_machine_details(machine_id):
 
     failure_prob = float(classifier.predict_proba(X_classifier)[0][1])
     predicted_tool_wear = float(regressor.predict(X_regressor)[0])
+    
+    # Use unified risk logic: Max of AI probability and physical wear percentage
+    wear_pct = predicted_tool_wear / 250.0
+    combined_risk = max(failure_prob, wear_pct)
+    combined_risk_pct = round(combined_risk * 100, 2)
+    
     actual_tool_wear = float(df_raw_all.iloc[machine_id]['Tool wear [min]'])
     
     actual_rul_min = max(0, 254 - int(actual_tool_wear))
@@ -91,14 +99,22 @@ def get_machine_details(machine_id):
         "MODERATE": "⚠️ BETA: RUL predictions have moderate error (±20-50 min). Cross-check with actual measured tool wear.",
         "GOOD": "✓ RUL prediction within acceptable range (±<20 min). Regressor uses clean sensor telemetry."
     }
+
+    # Actionable Feedback Layer: Unified status thresholds
+    status = 'CRITICAL' if combined_risk_pct >= 75 else ('WARNING' if combined_risk_pct >= 50 else 'NORMAL')
+    reason = 'Critical Risk Threshold Exceeded' if combined_risk_pct >= 75 else 'Elevated Risk Level Detected' if status == 'WARNING' else 'Optimal Operation'
+    
+    work_order = None
+    if status != 'NORMAL':
+        work_order = mls.generate_work_order(machine_id, status, reason)
     
     return jsonify({
         'machine_id': machine_id,
         'features': {feat: float(df_raw_all.iloc[machine_id][feat]) for feat in mls.FEATURE_COLS_CLASSIFIER},
         'failure_analysis': {
-            'probability_percent': round(failure_prob * 100, 2),
-            'status': 'CRITICAL' if failure_prob >= 0.75 else ('WARNING' if failure_prob >= 0.50 else 'NORMAL'),
-            'note': '✓ Failure classifier is production-ready'
+            'probability_percent': combined_risk_pct,
+            'status': status,
+            'note': '✓ Unified Risk Intelligence (AI + Physics)'
         },
         'tool_wear_analysis': {
             'actual_tool_wear_minutes': round(actual_tool_wear, 2),
@@ -118,7 +134,8 @@ def get_machine_details(machine_id):
             'status': model_reliability,
             'warning': reliability_warning[model_reliability]
         },
-        'model_performance_note': '✓ Fixed: RUL predictions are now based on clean sensor telemetry (leaky features removed). Failure classifier remains trustworthy.',
+        'work_order': work_order,
+        'model_performance_note': '✓ Fixed: RUL predictions are now based on clean sensor telemetry. Failure classifier remains trustworthy.',
         'timestamp': datetime.now().isoformat()
     })
 
@@ -140,7 +157,7 @@ def get_stats():
     })
 @api_bp.route('/model-calibration')
 @login_required
-@plan_required('Enterprise')
+@plan_required('Industrial Nexus')
 def model_calibration():
     """Diagnostic endpoint for enterprise plans (Vectorized)"""
     data_dict = mls.get_data()

@@ -23,23 +23,23 @@
                 <form id="predictionForm" class="row g-3">
                     <div class="col-md-6">
                         <label class="metric-label-small mb-2">Air Temperature (K)</label>
-                        <input type="number" id="air_temp" class="form-control" placeholder="295.3" step="0.1" required>
+                        <input type="number" id="air_temp" class="form-control" placeholder="295.3" step="0.1" min="200" max="400" required>
                     </div>
                     <div class="col-md-6">
                         <label class="metric-label-small mb-2">Process Temperature (K)</label>
-                        <input type="number" id="process_temp" class="form-control" placeholder="310.0" step="0.1" required>
+                        <input type="number" id="process_temp" class="form-control" placeholder="310.0" step="0.1" min="200" max="500" required>
                     </div>
                     <div class="col-md-6">
                         <label class="metric-label-small mb-2">Rotational Speed (rpm)</label>
-                        <input type="number" id="rotational_speed" class="form-control" placeholder="1500" required>
+                        <input type="number" id="rotational_speed" class="form-control" placeholder="1500" min="0" max="5000" required>
                     </div>
                     <div class="col-md-6">
                         <label class="metric-label-small mb-2">Torque (Nm)</label>
-                        <input type="number" id="torque" class="form-control" placeholder="42.8" step="0.1" required>
+                        <input type="number" id="torque" class="form-control" placeholder="42.8" step="0.1" min="0" max="500" required>
                     </div>
                     <div class="col-md-6">
                         <label class="metric-label-small mb-2">Tool Wear (min)</label>
-                        <input type="number" id="tool_wear" class="form-control" placeholder="0" min="0" required>
+                        <input type="number" id="tool_wear" class="form-control" placeholder="0" min="0" max="1000" required>
                     </div>
                     <div class="col-md-6">
                         <label class="metric-label-small mb-2">Is Anomaly</label>

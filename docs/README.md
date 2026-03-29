@@ -1,41 +1,28 @@
-# 📚 Documentation Index & Navigation
+# 📚 IndustriSense AI Documentation
 
-Welcome to IndustriSense-AI documentation! Find what you need using this comprehensive index.
+Technical specifications, guides, and operational manuals for the IndustriSense AI platform.
 
 ---
 
-## 🚀 Quick Navigation by Role
+## 🚀 Quick Navigation
 
-### 👤 **I'm New Here**
-Start with: [guides/quick-start.md](guides/quick-start.md)
-- 3-step setup guide
-- Project overview
-- How to run notebooks
+### 👤 **Getting Started**
+- **[User Guide Manual](guides/user-manual.md)** - Comprehensive guide for operators and managers.
+- **[Quick Start Guide](guides/quick-start.md)** - 3-step setup and overview.
+- **[Retraining Guide](RETRAINING_GUIDE.md)** - How to update models with new data.
 
-### 👨‍💻 **I'm a Developer**
-Read in order:
-1. [guides/quick-start.md](guides/quick-start.md) - Setup
-2. [notebooks/architecture.md](notebooks/architecture.md) - Code patterns  
-3. [architecture/ml-pipeline.md](architecture/ml-pipeline.md) - ML design
-4. [deployment/web-app.md](deployment/web-app.md) - Web app reference
+### 👨‍💻 **Developer Reference**
+- **[Web App Documentation](deployment/web-app.md)** - Flask architecture, security, and deployment.
+- **[ML Troubleshooting](deployment/ml-troubleshooting.md)** - Common issues, feature scaling, and debugging.
+- **[Verification Checklist](deployment/verification.md)** - Pre-deployment testing procedures.
 
-### 🚀 **I Need to Deploy**
-Must read:
-1. [deployment/web-app.md](deployment/web-app.md) - Flask setup
-2. [deployment/verification.md](deployment/verification.md) - Testing
-3. [deployment/ml-troubleshooting.md](deployment/ml-troubleshooting.md) - Debugging
+### 📝 Technical Specifications
+- **[SRS (Requirements)](project/SRS.md)** - Functional and non-functional requirements.
+- **[SDD (Design)](project/SDD.md)** - System architecture and component design.
+- **[Database Schema](project/DATABASE_SCHEMA.md)** - Relational data model and ER diagrams.
+- **[Test Plan](project/TEST_PLAN.md)** - Verification strategy and industrial quality standards.
+- **[Notebooks Overview](notebooks/README.md)** - Data science pipeline and experimental results.
 
-### 🔍 **Something's Broken**
-Go to: [deployment/ml-troubleshooting.md](deployment/ml-troubleshooting.md)
-- Common issue diagnosis
-- Step-by-step fixes
-- Debugging procedures
-
-### 📝 **I Need Technical Specs**
-See: [project/SRS.md](project/SRS.md)
-- Requirements specification
-- System architecture
-- Constraints and scope
 
 ---
 
@@ -44,105 +31,40 @@ See: [project/SRS.md](project/SRS.md)
 ```
 docs/
 ├── README.md                       ← You are here
-├── DOCUMENTATION_INDEX.md          ← Master index (detailed)
+├── RETRAINING_GUIDE.md             ← Model update procedures
 │
 ├── guides/                         ← Getting Started
-│   └── quick-start.md             Quick 3-step setup
+│   └── quick-start.md             Installation & usage
 │
-├── architecture/                   ← Design & Architecture
-│   ├── ml-pipeline.md             ML design & troubleshooting
-│   ├── system-design.md            System architecture (planned)
-│   └── notebooks.md                Notebook patterns (planned)
-│
-├── deployment/                     ← Flask & Operations
-│   ├── web-app.md                 Flask dashboard guide
-│   ├── ml-troubleshooting.md       ML debugging guide
+├── deployment/                     ← Operations & DevOps
+│   ├── web-app.md                 Flask & Gunicorn guide
+│   ├── ml-troubleshooting.md       ML pipeline debugging
 │   ├── verification.md             Testing checklist
 │   └── changes.md                  Technical changelog
 │
-├── notebooks/                      ← Jupyter Best Practices
-│   ├── README.md                  Notebook guide
-│   ├── architecture.md             Architecture & patterns
-│   ├── standards.md                Coding standards
-│   ├── templates.md                Skeleton templates
-│   ├── ml-best-practices.md        ML patterns
-│   └── train-test-split.md         Train/test details
+├── notebooks/                      ← Data Science
+│   ├── README.md                  Notebook index & results
+│   └── [specific notebooks...]     Technical details
 │
-├── project/                        ← Requirements & Specs
-│   ├── SRS.md                      Software requirements
-│   ├── feasibility.md              Feasibility analysis
-│   └── manifest.md                 Project manifest
-│
-├── audit/                          ← Compliance & Reports
-│   ├── README.md                  Audit guide
-│   ├── AUDIT_REPORT.md            Comprehensive report
-│   ├── AUDIT_CHECKLIST.md         Verification checklist
-│   └── [other audit docs...]
-│
-└── archive/                        ← Reference (Deprecated)
-    ├── final-status.md             Final status (reference)
-    └── gemini-prompts.md           Legacy slide prompts
+└── project/                        ← Product Specs
+    ├── SRS.md                      System requirements
+    └── SDD.md                      Architecture & design
 ```
 
 ---
 
-## 🔗 Find Documentation
+## 👔 Subscription Tiers & Access
 
-### By Topic
-
-| Topic | Location |
-|-------|----------|
-| **Getting Started** | [guides/quick-start.md](guides/quick-start.md) |
-| **Setup & Installation** | [../README.md](../README.md) |
-| **Web App / Flask** | [deployment/web-app.md](deployment/web-app.md) |
-| **ML Troubleshooting** | [deployment/ml-troubleshooting.md](deployment/ml-troubleshooting.md) |
-| **Testing & Verification** | [deployment/verification.md](deployment/verification.md) |
-| **What Changed?** | [deployment/changes.md](deployment/changes.md) |
-| **ML Pipeline Design** | [architecture/ml-pipeline.md](architecture/ml-pipeline.md) |
-| **System Architecture** | [architecture/system-design.md](architecture/system-design.md) |
-| **Notebook Patterns** | [notebooks/architecture.md](notebooks/architecture.md) |
-| **Project Requirements** | [project/SRS.md](project/SRS.md) |
-| **Audit Report** | [audit/AUDIT_REPORT.md](audit/AUDIT_REPORT.md) |
-| **Complete Index** | [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) |
+| Tier | Target Audience | Key Capabilities |
+|------|-----------------|------------------|
+| **Operational Base** | Entry-level Monitoring | 10 Machines, Failure Classification, Basic XAI. |
+| **Production Pro** | Maintenance Teams | 50 Machines, RUL Forecasting, Maintenance Reports. |
+| **Industrial Nexus** | Enterprise ROI | Unlimited Machines, Full CMMS Integration, Financial Audits. |
 
 ---
 
-## ⚡ Common Questions
+## 🔄 Version Information
 
-| Question | Answer |
-|----------|--------|
-| How do I get started? | [guides/quick-start.md](guides/quick-start.md) |
-| How do I run the web app? | [deployment/web-app.md](deployment/web-app.md) |
-| Why are predictions constant? | [deployment/ml-troubleshooting.md](deployment/ml-troubleshooting.md) |
-| How do I test everything works? | [deployment/verification.md](deployment/verification.md) |
-| What was changed and why? | [deployment/changes.md](deployment/changes.md) |
-| What does the ML model do? | [architecture/ml-pipeline.md](architecture/ml-pipeline.md) |
-| What are the system requirements? | [project/SRS.md](project/SRS.md) |
-
----
-
-## 📊 Documentation Overview
-
-- **26+ documentation files** organized by topic
-- **Guides**: Getting started, setup, quick reference
-- **Architecture**: ML pipeline, system design, patterns  
-- **Deployment**: Web app, troubleshooting, testing
-- **Notebooks**: Best practices, standards, templates
-- **Project**: Requirements, feasibility, manifest
-- **Audit**: Compliance, checklists, reports
-- **Archive**: Deprecated or reference documents (FYI only)
-
----
-
-## 🔄 Latest Updates
-
-✅ **Feb 22, 2026** — Major documentation reorganization
-- Consolidated documents into clear categories
-- Created guides/, architecture/, deployment/ sections
-- Added comprehensive navigation
-- Archived deprecated files
-- All links verified for GitHub compatibility
-
----
-
-**For complete details, see:** [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)
+**Current Version:** 3.5 (Industrial Hardened)  
+**Last Updated:** March 2026  
+**Status:** Production Ready

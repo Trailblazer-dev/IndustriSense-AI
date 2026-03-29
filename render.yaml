@@ -1,0 +1,64 @@
+services:
+  # Web Service
+  - type: web
+    name: industrisense-web
+    env: docker
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
+    plan: standard
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHONPATH
+        value: /app:/app/web_app
+      - key: DATABASE_URL
+        fromDatabase:
+          name: industrisense-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: industrisense-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+
+  # Background Worker
+  - type: worker
+    name: industrisense-worker
+    env: docker
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
+    # Override the default CMD to run Celery
+    dockerCommand: celery -A app.tasks:celery worker --loglevel=info
+    plan: standard
+    envVars:
+      - key: PYTHONPATH
+        value: /app:/app/web_app
+      - key: DATABASE_URL
+        fromDatabase:
+          name: industrisense-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: industrisense-redis
+          property: connectionString
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: industrisense-web
+          property: envVar:SECRET_KEY
+
+# Managed Database
+databases:
+  - name: industrisense-db
+    databaseName: industrisense
+    user: industri_admin
+    plan: standard
+
+# Managed Redis
+databases:
+  - name: industrisense-redis
+    env: redis
+    plan: standard

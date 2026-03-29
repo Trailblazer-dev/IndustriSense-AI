@@ -1,11 +1,16 @@
 import os
-import pickle
+import joblib
 import hashlib
+import warnings
 from typing import Tuple, Optional
 
 import numpy as np
 try:
     import xgboost as xgb
+    # Suppress XGBoost warnings about serialization/file formats globally
+    import warnings
+    warnings.filterwarnings("ignore", category=UserWarning, module="xgboost")
+    warnings.filterwarnings("ignore", message=".*older version of XGBoost.*")
 except Exception:
     xgb = None
 
@@ -65,9 +70,10 @@ def load_classifier(model_dir: str) -> Tuple[Optional[object], Optional[str]]:
     """Load classifier artifact.
 
     Returns (model_object, sha256) where model_object provides `predict` and `predict_proba`.
-    Prefers `.xgb` booster files, falls back to pickle when necessary.
+    Prefers native .xgb files, then joblib, then legacy pickle.
     """
     xgb_path = os.path.join(model_dir, 'xgboost_classifier.xgb')
+    joblib_path = os.path.join(model_dir, 'xgboost_classifier.joblib')
     pkl_path = os.path.join(model_dir, 'xgboost_classifier.pkl')
 
     if os.path.exists(xgb_path) and xgb is not None:
@@ -76,44 +82,46 @@ def load_classifier(model_dir: str) -> Tuple[Optional[object], Optional[str]]:
         booster.load_model(xgb_path)
         return XGBoostClassifierWrapper(booster), sha
 
-    if os.path.exists(pkl_path):
-        sha = sha256_file(pkl_path)
-        with open(pkl_path, 'rb') as f:
-            obj = pickle.load(f)
-        # If it's an XGBClassifier sklearn wrapper, extract booster
+    # Prioritize joblib over legacy pickle
+    target_path = joblib_path if os.path.exists(joblib_path) else pkl_path
+    if os.path.exists(target_path):
+        sha = sha256_file(target_path)
         try:
+            obj = joblib.load(target_path)
+            # If it's an XGBClassifier sklearn wrapper, extract booster
             if hasattr(obj, 'get_booster') and xgb is not None:
                 booster = obj.get_booster()
-                # booster may be xgboost.Booster or similar
                 return XGBoostClassifierWrapper(booster), sha
-        except Exception:
-            pass
-        # Otherwise return raw object (best-effort)
-        return obj, sha
+            return obj, sha
+        except Exception as e:
+            print(f"Warning: Failed to load artifact with joblib: {e}")
 
     return None, None
 
 
 def load_regressor(model_dir: str) -> Tuple[Optional[object], Optional[str]]:
     xgb_path = os.path.join(model_dir, 'xgboost_wear_regressor.xgb')
+    joblib_path = os.path.join(model_dir, 'xgboost_wear_regressor.joblib')
     pkl_path = os.path.join(model_dir, 'xgboost_wear_regressor.pkl')
 
     if os.path.exists(xgb_path) and xgb is not None:
         sha = sha256_file(xgb_path)
         booster = xgb.Booster()
-        booster.load_model(xgb_path)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            booster.load_model(xgb_path)
         return XGBoostRegressorWrapper(booster), sha
 
-    if os.path.exists(pkl_path):
-        sha = sha256_file(pkl_path)
-        with open(pkl_path, 'rb') as f:
-            obj = pickle.load(f)
+    target_path = joblib_path if os.path.exists(joblib_path) else pkl_path
+    if os.path.exists(target_path):
+        sha = sha256_file(target_path)
         try:
+            obj = joblib.load(target_path)
             if hasattr(obj, 'get_booster') and xgb is not None:
                 booster = obj.get_booster()
                 return XGBoostRegressorWrapper(booster), sha
-        except Exception:
-            pass
-        return obj, sha
+            return obj, sha
+        except Exception as e:
+            print(f"Warning: Failed to load artifact with joblib: {e}")
 
     return None, None

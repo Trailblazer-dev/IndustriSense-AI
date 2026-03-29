@@ -16,9 +16,21 @@ class Config:
     WTF_CSRF_ENABLED = True
     
     # Database
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
+    db_url = os.environ.get('DATABASE_URL')
+    if db_url and db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
+    
+    SQLALCHEMY_DATABASE_URI = db_url or \
         'sqlite:///' + os.path.join(os.path.dirname(__file__), 'industrisense.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "connect_args": {"connect_timeout": 20},
+        "pool_pre_ping": True,
+    }
+    
+    # Celery / Redis (Background Tasks)
+    CELERY_BROKER_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
+    RESULT_BACKEND = os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
     
     # Model paths
     MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src', 'models')
@@ -50,7 +62,7 @@ class ProductionConfig(Config):
     """Production configuration"""
     DEBUG = False
     TESTING = False
-    TALISMAN_FORCE_HTTPS = True
+    TALISMAN_FORCE_HTTPS = os.environ.get('TALISMAN_FORCE_HTTPS', 'true').lower() == 'true'
     # SECRET_KEY must be set via environment variable in production
     @classmethod
     def validate(cls):
@@ -62,6 +74,11 @@ class TestingConfig(Config):
     """Testing configuration"""
     TESTING = True
     DEBUG = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+    }
+    WTF_CSRF_ENABLED = False
 
 config = {
     'development': DevelopmentConfig,

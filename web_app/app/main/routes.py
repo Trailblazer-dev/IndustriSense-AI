@@ -56,13 +56,21 @@ def reports():
     # 2. Industry Context (Based on user setting or session)
     user_industry = request.args.get('industry') or getattr(current_user, 'industry', 'General Manufacturing')
 
+    # 3. Recent Archives for Sidebar
+    recent_archives = ReportArchive.query.filter_by(organization_id=current_user.organization_id)\
+        .order_by(ReportArchive.created_at.desc()).limit(5).all()
+    
+    print(f"DEBUG: Found {len(recent_archives)} recent archives for Org ID {current_user.organization_id}")
+
     return render_template('reports.html', 
                            stats=analysis['sample_stats'],
                            monitored_assets=analysis['monitored_sample'],
                            at_risk_list=at_risk_machines,
                            report_date=datetime.now().strftime('%B %d, %Y'),
                            financials=financials,
-                           industry=user_industry)
+                           industry=user_industry,
+                           recent_archives=recent_archives,
+                           is_archive=False)
 
 @main_bp.route('/reports/save', methods=['POST'])
 @login_required
@@ -92,6 +100,7 @@ def save_report():
         
         new_report = ReportArchive(
             user_id=current_user.id,
+            organization_id=current_user.organization_id,
             report_title=f"Audit_{datetime.now().strftime('%Y%m%d_%H%M')}",
             industry=report_industry,
             summary_stats=summary,
@@ -101,7 +110,7 @@ def save_report():
         db.session.commit()
         
         flash(f'Operational Audit for {report_industry} successfully archived.', 'success')
-        return redirect(url_for('main.reports_archive'))
+        return redirect(url_for('main.reports'))
     except Exception as e:
         print(f"Error saving report: {e}")
         flash('Failed to save report. Please contact system admin.', 'error')
@@ -115,14 +124,14 @@ def reports_archive():
     """Historical Report Browser with Filtering"""
     industry_filter = request.args.get('industry')
     
-    query = ReportArchive.query.filter_by(user_id=current_user.id)
+    query = ReportArchive.query.filter_by(organization_id=current_user.organization_id)
     if industry_filter and industry_filter != 'All':
         query = query.filter_by(industry=industry_filter)
         
     archives = query.order_by(ReportArchive.created_at.desc()).all()
     
     # Get unique industries for filter dropdown
-    industries = db.session.query(ReportArchive.industry).filter_by(user_id=current_user.id).distinct().all()
+    industries = db.session.query(ReportArchive.industry).filter_by(organization_id=current_user.organization_id).distinct().all()
     industry_list = [i[0] for i in industries if i[0]]
     
     return render_template('reports_archive.html', archives=archives, industries=industry_list, current_filter=industry_filter)
@@ -134,7 +143,7 @@ def reports_archive():
 def download_report(report_id):
     """Generate Industry-aware CSV Download"""
     report = ReportArchive.query.get_or_404(report_id)
-    if report.user_id != current_user.id:
+    if report.organization_id != current_user.organization_id:
         return "Unauthorized", 403
         
     # Create CSV data
@@ -183,7 +192,7 @@ def download_report(report_id):
 def view_report_detail(report_id):
     """View a specific archived report in the professional layout"""
     report = ReportArchive.query.get_or_404(report_id)
-    if report.user_id != current_user.id:
+    if report.organization_id != current_user.organization_id:
         flash('Unauthorized access to report.', 'error')
         return redirect(url_for('main.reports_archive'))
     
