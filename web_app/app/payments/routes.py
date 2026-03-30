@@ -99,9 +99,9 @@ def plans():
 def checkout(plan_name):
     """Mapped to Industrial Tiers"""
     plan_mapping = {
-        'essential': {'name': 'Operational Base', 'price': 299, 'plan_id': 'essential_plan'},
-        'pro': {'name': 'Production Pro', 'price': 999, 'plan_id': 'pro_plan'},
-        'enterprise': {'name': 'Industrial Nexus', 'price': 1999, 'plan_id': 'enterprise_plan'}
+        'essential': {'name': 'Operational Base', 'price': 20, 'plan_id': 'essential_plan'},
+        'pro': {'name': 'Production Pro', 'price': 30, 'plan_id': 'pro_plan'},
+        'enterprise': {'name': 'Industrial Nexus', 'price': 40, 'plan_id': 'enterprise_plan'}
     }
     plan = plan_mapping.get(plan_name.lower())
     if not plan:

@@ -226,6 +226,19 @@ body {
     text-transform: uppercase;
 }
 
+/* ===== Bootstrap / Utility Overrides ===== */
+.bg-primary { background-color: var(--primary) !important; }
+.bg-primary-light { background-color: var(--primary-light) !important; }
+.bg-accent { background-color: var(--accent) !important; }
+.bg-success { background-color: var(--success) !important; }
+.bg-warning { background-color: var(--warning) !important; }
+.bg-danger { background-color: var(--danger) !important; }
+
+.opacity-05 { opacity: 0.05 !important; }
+.opacity-10 { opacity: 0.1 !important; }
+.opacity-25 { opacity: 0.25 !important; }
+.opacity-75 { opacity: 0.75 !important; }
+
 @media (max-width: 768px) {
     .container-fluid { padding: 1.5rem; }
     .page-title { font-size: 2rem; }
